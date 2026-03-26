@@ -297,7 +297,7 @@ flowchart TD
         compressed storage)]:::good
         ST2 ==> FREE["Free layer L−1
         decompressed tensors"]
-        FREE ==> DQ2["Dequantize current layer"]
+        FREE ==> DQ2["Dequantize NEW tokens only"]
         DQ2 ==> R2([Return decompressed K, V])
     end
 
@@ -351,7 +351,7 @@ sequenceDiagram
     Cache ->> Cache: Compress K, V → uint8 + fp32
     Cache ->>+ Store: Append compressed layer L
     Store -->>- Cache: Stored
-    Cache ->> Cache: Dequantize layer L
+    Cache ->> Cache: Dequantize NEW tokens only
     Cache -->>- Model: Return decompressed (K, V)
     deactivate Model
 ```
@@ -498,5 +498,5 @@ quadrantChart
 | **fp32 norms, not fp16** | fp16 norm precision loss compounds across 36 transformer layers, flipping low-confidence logits at 10K+ token sequences. fp32 costs only 2 extra bytes per vector (1.94x → 1.94x for TQ3, negligible for TQ4). |
 | **Non-invasive monkey-patching** | Avoids subclassing `DynamicCache`, which is fragile across `transformers` versions. The wrapper saves and restores the original method. |
 | **`@lru_cache` on Lloyd-Max** | A 32-layer model creates 64 compressors (K+V). Without caching, `scipy.integrate.quad` would run for 2+ minutes at init. |
-| **Lazy one-layer decompression** | `CompressedDynamicCache` frees the previous layer's FP32 tensors when the next layer updates, keeping peak VRAM to one decompressed layer at a time. |
+| **Incremental dequantization** | `CompressedDynamicCache` dequantizes only new tokens each decode step (not the full cache), maintaining a running decompressed buffer per layer. Previous layer buffers are freed to keep peak VRAM to one decompressed layer at a time. |
 | **Haar-random rotation via QR** | QR decomposition of a Gaussian matrix produces a uniformly distributed orthogonal matrix, ensuring coordinates are i.i.d. Beta-distributed. |

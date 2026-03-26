@@ -10,14 +10,15 @@ Implementation of Google's **TurboQuant** algorithm ([arXiv 2504.19874](https://
 |------|----------|-------------|----------------|----------|
 | FP16 baseline | 1,639 MiB | 1.0x | -- | -- |
 | TQ3 (3-bit uint8) | 845 MiB | 1.94x | Coherent, different details | 2.35x slower |
-| **TQ4 (4-bit nibble)** | **435 MiB** | **3.76x** | **Near-identical (100+ tokens match)** | 3.36x slower |
+| TQ4 full-cache dequant | 435 MiB | 3.76x | Near-identical (100+ tokens match) | 3.36x slower |
+| **TQ4 incremental dequant** | **435 MiB** | **3.76x** | **Near-identical (100+ tokens match)** | **1.78x slower** |
 
 > First TurboQuant implementation validated on a vision-language model (VLM) with video input.
 
 ## What's Here
 
 - **Core algorithm** -- Lloyd-Max codebook solver, TurboQuantMSE (Stage 1), TurboQuantProd (Stage 2 with QJL correction)
-- **CompressedDynamicCache** -- Drop-in KV cache wrapper storing uint8 indices + fp32 norms with lazy dequantization. At `bits=4`, indices are nibble-packed (two per byte) for 3.76x compression.
+- **CompressedDynamicCache** -- Drop-in KV cache wrapper storing uint8 indices + fp32 norms with incremental dequantization (only new tokens per decode step). At `bits=4`, indices are nibble-packed (two per byte) for 3.76x compression at 1.78x overhead.
 - **Benchmark harness** -- A/B testing CLI comparing baseline vs compressed on any HuggingFace model
 - **62 tests** -- Including long-sequence regression tests (36 layers, 1024 tokens) that catch precision bugs
 
@@ -78,11 +79,11 @@ compressed = CompressedDynamicCache(cache, head_dim=128, bits=4)
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) -- Module map, dependency DAG, data flow diagrams, design decisions
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) -- Implementation status, next steps, key lessons
-- [`experiments/logs/`](experiments/logs/) -- All 4 experiment logs with full results
+- [`experiments/logs/`](experiments/logs/) -- All 5 experiment logs with full results
 
 ## Fused Triton Kernel (WIP)
 
-A custom Triton kernel fuses nibble unpacking, centroid lookup, and rotation (pre-rotation trick) into a single GPU pass, eliminating the dequantization bottleneck:
+The current production path uses **incremental dequantization** (P3): only new tokens are dequantized each decode step, reducing overhead from 3.36x to 1.78x without any custom kernels. The fused Triton kernel below is a future optimization path that fuses nibble unpacking, centroid lookup, and rotation (pre-rotation trick) into a single GPU pass:
 
 | Metric | Result |
 |--------|--------|
@@ -95,7 +96,7 @@ A custom Triton kernel fuses nibble unpacking, centroid lookup, and rotation (pr
 
 ## Status
 
-**Pre-alpha / WIP.** The core algorithm and compressed cache are validated at 3.76x compression. The fused Triton kernel achieves 17.8x on the Q@K^T micro-benchmark with perfect cosine similarity, and single-layer integration on Molmo2-4B produces correct output. Multi-layer integration is in progress -- it requires full Flash Attention-style fusion (softmax+V) to maintain precision across all 36 layers.
+**Pre-alpha / WIP.** The implementation is validated end-to-end with 3.76x compression and 1.78x overhead (Experiment 005, incremental dequantization). The fused Triton kernel achieves 17.8x on the Q@K^T micro-benchmark with perfect cosine similarity, and single-layer integration on Molmo2-4B produces correct output. Multi-layer integration is in progress -- it requires full Flash Attention-style fusion (softmax+V) to maintain precision across all 36 layers.
 
 ## Reference
 

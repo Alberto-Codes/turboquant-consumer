@@ -40,6 +40,7 @@ on consumer GPUs (RTX 4090, 24 GB VRAM) with Molmo2 vision-language models.
 | 001 | 2026-03-25 | Failed | TurboQuantProd (2-bit MSE + 1-bit QJL) garbled output — QJL wasted in drop-in mode |
 | 002 | 2026-03-25 | Passed | MSE-only fix: identical text output, coherent video (1.3x overhead) |
 | 003 | 2026-03-25 | Passed | CompressedDynamicCache: coherent output, 1.94x compression, fp16 norms bug found and fixed |
+| 005 | 2026-03-25 | Passed | Incremental dequant: 3.76x compression with 1.78x overhead (down from 3.36x) |
 
 ---
 
@@ -58,14 +59,23 @@ on consumer GPUs (RTX 4090, 24 GB VRAM) with Molmo2 vision-language models.
 | `CompressedDynamicCache` bits=4 | Done | 7 | Auto-enabled at bits=4, transparent to callers |
 | `_CompressedLayer.packed` flag | Done | — | Tracks packing format through cat/stats |
 
+### P3: Incremental dequantization (1.78x overhead)
+
+| Component | Status | Tests | Notes |
+|-----------|--------|-------|-------|
+| Incremental dequant in `CompressedDynamicCache` | Done | — | Dequantize only new tokens, maintain running buffer |
+
+**Experiment 005 results:** 3.76x compression with 1.78x overhead (down from 3.36x full-cache dequant). Near-identical output quality preserved.
+
 ### Compression Summary
 
-| Mode | Bytes/block | Compression | Quality | Status |
-|------|-------------|-------------|---------|--------|
-| FP16 baseline | 256 | 1.0x | — | — |
-| TQ3 uint8 | 132 | 1.94x | ~95% cosine | Done |
-| **TQ4 nibble** | **68** | **3.76x** | **~97% cosine** | **Done** |
-| TQ3 bit-packed | 52 | 4.92x | ~95% cosine | Deferred (P5) |
+| Mode | Bytes/block | Compression | Quality | Overhead | Status |
+|------|-------------|-------------|---------|----------|--------|
+| FP16 baseline | 256 | 1.0x | — | — | — |
+| TQ3 uint8 | 132 | 1.94x | ~95% cosine | 2.35x | Done |
+| TQ4 full-cache dequant | 68 | 3.76x | ~97% cosine | 3.36x | Done |
+| **TQ4 incremental dequant** | **68** | **3.76x** | **~97% cosine** | **1.78x** | **Done** |
+| TQ3 bit-packed | 52 | 4.92x | ~95% cosine | — | Deferred (P5) |
 
 **Projected VRAM for Molmo2-4B (36 layers, 8 KV heads, 11K tokens):**
 
@@ -77,23 +87,7 @@ on consumer GPUs (RTX 4090, 24 GB VRAM) with Molmo2 vision-language models.
 
 ---
 
-## Next Up
-
-### P3: Incremental dequantization (eliminate decode overhead)
-
-**Goal:** Eliminate the 3.36x decode overhead by dequantizing only NEW tokens instead of the entire cache at every layer at every step.
-
-**Why:** The current `CompressedDynamicCache` dequantizes ALL 11K+ cached tokens at every layer at every decode step via a 128x128 rotation matmul. The overhead is dominated by memory churn: `indices.long()` allocates 88 MB temporary tensors per layer (36 layers = 3.2 GB of allocations per decode step).
-
-**Approach:** Maintain a running decompressed key buffer per layer. On each decode step:
-1. Dequantize ONLY the 1 new token (microseconds)
-2. `torch.cat` onto the running buffer
-3. Free the previous layer's buffer (same one-layer-at-a-time pattern)
-4. SDPA gets the full decompressed K without re-dequantizing 11K tokens
-
-**Expected result:** Decode overhead drops from 3.36x to ~1.0x (near baseline). SDPA precision maintained across all 36 layers (proven by unfused TQ4 path). 3.76x VRAM compression preserved.
-
-**Effort:** ~30 minutes. Changes only `CompressedDynamicCache._compressed_update()`.
+## In Progress
 
 ### P3b: Fused Triton Q@K^T kernel (validated, needs Flash Attention fusion)
 
