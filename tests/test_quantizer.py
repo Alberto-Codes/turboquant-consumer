@@ -14,12 +14,14 @@ from .conftest import BITS, DIM, N_PAIRS, N_SAMPLES
 class TestTurboQuantMSE:
     """Validate Stage 1 MSE quantizer."""
 
-    def test_round_trip_mse_within_bounds(self, mse_quantizer: TurboQuantMSE) -> None:
+    def test_round_trip_mse_within_bounds(
+        self, mse_quantizer: TurboQuantMSE, device: torch.device
+    ) -> None:
         """MSE distortion should be within theoretical bounds.
 
         Paper bound: D_mse <= sqrt(3) * pi/2 * (1/4^b) for dimension d.
         """
-        x = torch.randn(N_SAMPLES, DIM)
+        x = torch.randn(N_SAMPLES, DIM).to(device)
         x = x / torch.norm(x, dim=-1, keepdim=True)
 
         indices, norms = mse_quantizer.quantize(x)
@@ -31,9 +33,11 @@ class TestTurboQuantMSE:
             f"MSE {mse:.6f} exceeds 5x theoretical bound {theoretical_bound:.6f}"
         )
 
-    def test_norms_preserved(self, mse_quantizer: TurboQuantMSE) -> None:
+    def test_norms_preserved(
+        self, mse_quantizer: TurboQuantMSE, device: torch.device
+    ) -> None:
         """Stored norms should closely match original vector norms."""
-        x = torch.randn(100, DIM)
+        x = torch.randn(100, DIM).to(device)
         original_norms = torch.norm(x, dim=-1)
 
         _, stored_norms = mse_quantizer.quantize(x)
@@ -46,9 +50,9 @@ class TestTurboQuantMSE:
             f"Norm relative error {relative_error:.4f} too high"
         )
 
-    def test_higher_bits_lower_mse(self) -> None:
+    def test_higher_bits_lower_mse(self, device: torch.device) -> None:
         """More bits should yield lower reconstruction error."""
-        x = torch.randn(200, DIM)
+        x = torch.randn(200, DIM).to(device)
         x = x / torch.norm(x, dim=-1, keepdim=True)
 
         mse_values = []
@@ -63,30 +67,36 @@ class TestTurboQuantMSE:
             f"MSE should decrease with more bits: {mse_values}"
         )
 
-    def test_zero_vector(self, mse_quantizer: TurboQuantMSE) -> None:
+    def test_zero_vector(
+        self, mse_quantizer: TurboQuantMSE, device: torch.device
+    ) -> None:
         """Zero vectors should not cause errors and should reconstruct near zero."""
-        x = torch.zeros(1, DIM)
+        x = torch.zeros(1, DIM, device=device)
         indices, norms = mse_quantizer.quantize(x)
         reconstructed = mse_quantizer.dequantize(indices, norms)
 
         assert reconstructed.shape == x.shape
         assert torch.allclose(reconstructed, x, atol=1e-6)
 
-    def test_single_vector(self, mse_quantizer: TurboQuantMSE) -> None:
+    def test_single_vector(
+        self, mse_quantizer: TurboQuantMSE, device: torch.device
+    ) -> None:
         """Single vector input should work without broadcast issues."""
-        x = torch.randn(1, DIM)
+        x = torch.randn(1, DIM).to(device)
         indices, norms = mse_quantizer.quantize(x)
         reconstructed = mse_quantizer.dequantize(indices, norms)
         assert reconstructed.shape == (1, DIM)
 
-    def test_large_magnitude_vectors(self, mse_quantizer: TurboQuantMSE) -> None:
+    def test_large_magnitude_vectors(
+        self, mse_quantizer: TurboQuantMSE, device: torch.device
+    ) -> None:
         """Vectors with large magnitudes should reconstruct proportionally.
 
         Magnitude should not affect reconstruction quality since norms are
         stored separately. Cosine similarity is magnitude-invariant.
         At 3-bit MSE, empirical cosine sim is ~0.86 for random vectors.
         """
-        x = torch.randn(50, DIM) * 1000.0
+        x = (torch.randn(50, DIM) * 1000.0).to(device)
         indices, norms = mse_quantizer.quantize(x)
         reconstructed = mse_quantizer.dequantize(indices, norms)
 
@@ -98,10 +108,12 @@ class TestTurboQuantMSE:
 class TestTurboQuantProd:
     """Validate Stage 2 inner product estimator."""
 
-    def test_inner_product_unbiased(self, prod_quantizer: TurboQuantProd) -> None:
+    def test_inner_product_unbiased(
+        self, prod_quantizer: TurboQuantProd, device: torch.device
+    ) -> None:
         """QJL-corrected inner product estimates should be approximately unbiased."""
-        queries = torch.randn(N_PAIRS, DIM) * 0.1
-        keys = torch.randn(N_PAIRS, DIM) * 0.1
+        queries = (torch.randn(N_PAIRS, DIM) * 0.1).to(device)
+        keys = (torch.randn(N_PAIRS, DIM) * 0.1).to(device)
 
         true_ip = (queries * keys).sum(dim=-1)
 
@@ -119,10 +131,12 @@ class TestTurboQuantProd:
             f"(bias={bias:.6f}, signal={signal:.6f})"
         )
 
-    def test_correlation_with_true_ip(self, prod_quantizer: TurboQuantProd) -> None:
+    def test_correlation_with_true_ip(
+        self, prod_quantizer: TurboQuantProd, device: torch.device
+    ) -> None:
         """Estimated IPs should correlate strongly with true IPs."""
-        queries = torch.randn(N_SAMPLES, DIM) * 0.1
-        keys = torch.randn(N_SAMPLES, DIM) * 0.1
+        queries = (torch.randn(N_SAMPLES, DIM) * 0.1).to(device)
+        keys = (torch.randn(N_SAMPLES, DIM) * 0.1).to(device)
 
         true_ip = (queries * keys).sum(dim=-1)
         indices, norms, qjl_signs, res_norms = prod_quantizer.quantize(keys)
@@ -138,18 +152,20 @@ class TestTurboQuantProd:
         with pytest.raises(ValueError, match="bits >= 2"):
             TurboQuantProd(DIM, bits=1)
 
-    def test_bits_2_works(self) -> None:
+    def test_bits_2_works(self, device: torch.device) -> None:
         """bits=2 is the minimum valid configuration (1 MSE + 1 QJL)."""
         q = TurboQuantProd(DIM, bits=2)
-        x = torch.randn(10, DIM)
+        x = torch.randn(10, DIM).to(device)
         indices, norms, qjl_signs, res_norms = q.quantize(x)
         assert indices.shape == (10, DIM)
         assert qjl_signs.shape == (10, DIM)
 
-    def test_zero_vector_inner_product(self, prod_quantizer: TurboQuantProd) -> None:
+    def test_zero_vector_inner_product(
+        self, prod_quantizer: TurboQuantProd, device: torch.device
+    ) -> None:
         """Inner product with zero key should be approximately zero."""
-        query = torch.randn(1, DIM)
-        key = torch.zeros(1, DIM)
+        query = torch.randn(1, DIM).to(device)
+        key = torch.zeros(1, DIM, device=device)
 
         indices, norms, qjl_signs, res_norms = prod_quantizer.quantize(key)
         estimated = prod_quantizer.estimate_inner_product(

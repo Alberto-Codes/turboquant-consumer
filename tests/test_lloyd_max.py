@@ -31,18 +31,22 @@ class TestLloydMaxCodebook:
         assert len(centroids) == 2**bits
         assert len(boundaries) == 2**bits - 1
 
-    def test_quantize_dequantize_shape(self, codebook_3bit: LloydMaxCodebook) -> None:
+    def test_quantize_dequantize_shape(
+        self, codebook_3bit: LloydMaxCodebook, device: torch.device
+    ) -> None:
         """Quantize and dequantize preserve tensor shape."""
-        x = torch.randn(10, DIM) * 0.1
+        x = (torch.randn(10, DIM) * 0.1).to(device)
         indices = codebook_3bit.quantize(x)
         assert indices.shape == x.shape
 
         reconstructed = codebook_3bit.dequantize(indices)
         assert reconstructed.shape == x.shape
 
-    def test_indices_in_valid_range(self, codebook_3bit: LloydMaxCodebook) -> None:
+    def test_indices_in_valid_range(
+        self, codebook_3bit: LloydMaxCodebook, device: torch.device
+    ) -> None:
         """All quantized indices must be in [0, 2^bits - 1]."""
-        x = torch.randn(100, DIM) * 0.1
+        x = (torch.randn(100, DIM) * 0.1).to(device)
         indices = codebook_3bit.quantize(x)
         assert indices.min() >= 0
         assert indices.max() < 2**BITS

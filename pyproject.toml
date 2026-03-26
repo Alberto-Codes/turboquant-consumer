@@ -89,6 +89,7 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
     "unit: Unit tests (fast, isolated)",
+    "gpu: GPU tests (require CUDA, run inside ROCm container for AMD)",
     "benchmark: Benchmark tests (require GPU)",
     "slow: Slow-running tests",
 ]

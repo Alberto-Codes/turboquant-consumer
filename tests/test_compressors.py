@@ -15,16 +15,20 @@ from .conftest import DIM
 class TestKeyCompressor:
     """Validate TurboQuantCompressorV2 (key cache compressor)."""
 
-    def test_round_trip_shape(self, key_compressor: TurboQuantCompressorV2) -> None:
+    def test_round_trip_shape(
+        self, key_compressor: TurboQuantCompressorV2, device: torch.device
+    ) -> None:
         """Compress/decompress should preserve tensor shape."""
-        keys = torch.randn(1, 8, 32, DIM)
+        keys = torch.randn(1, 8, 32, DIM).to(device)
         compressed = key_compressor.compress(keys)
         decompressed = key_compressor.decompress(compressed)
         assert decompressed.shape == keys.shape
 
-    def test_cosine_similarity(self, key_compressor: TurboQuantCompressorV2) -> None:
+    def test_cosine_similarity(
+        self, key_compressor: TurboQuantCompressorV2, device: torch.device
+    ) -> None:
         """Decompressed keys should have high cosine similarity to originals."""
-        keys = torch.randn(1, 4, 64, DIM)
+        keys = torch.randn(1, 4, 64, DIM).to(device)
         compressed = key_compressor.compress(keys)
         decompressed = key_compressor.decompress(compressed)
 
@@ -39,20 +43,23 @@ class TestKeyCompressor:
         assert mean_sim > 0.80, f"Mean cosine similarity {mean_sim:.4f} too low"
 
     def test_single_element_sequence(
-        self, key_compressor: TurboQuantCompressorV2
+        self, key_compressor: TurboQuantCompressorV2, device: torch.device
     ) -> None:
         """seq_len=1 should work without errors."""
-        keys = torch.randn(1, 4, 1, DIM)
+        keys = torch.randn(1, 4, 1, DIM).to(device)
         compressed = key_compressor.compress(keys)
         decompressed = key_compressor.decompress(compressed)
         assert decompressed.shape == (1, 4, 1, DIM)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
     def test_dtype_preserved(
-        self, key_compressor: TurboQuantCompressorV2, dtype: torch.dtype
+        self,
+        key_compressor: TurboQuantCompressorV2,
+        dtype: torch.dtype,
+        device: torch.device,
     ) -> None:
         """Output dtype should match input dtype."""
-        keys = torch.randn(1, 2, 8, DIM).to(dtype)
+        keys = torch.randn(1, 2, 8, DIM).to(dtype).to(device)
         compressed = key_compressor.compress(keys)
         decompressed = key_compressor.decompress(compressed)
         assert decompressed.dtype == dtype
@@ -62,18 +69,20 @@ class TestKeyCompressor:
 class TestValueCompressor:
     """Validate TurboQuantCompressorMSE (value cache compressor)."""
 
-    def test_round_trip_shape(self, value_compressor: TurboQuantCompressorMSE) -> None:
+    def test_round_trip_shape(
+        self, value_compressor: TurboQuantCompressorMSE, device: torch.device
+    ) -> None:
         """Compress/decompress should preserve tensor shape."""
-        values = torch.randn(1, 8, 32, DIM)
+        values = torch.randn(1, 8, 32, DIM).to(device)
         compressed = value_compressor.compress(values)
         decompressed = value_compressor.decompress(compressed)
         assert decompressed.shape == values.shape
 
     def test_cosine_similarity_higher_than_keys(
-        self, value_compressor: TurboQuantCompressorMSE
+        self, value_compressor: TurboQuantCompressorMSE, device: torch.device
     ) -> None:
         """Value compressor (full 3-bit MSE) should have higher quality than keys."""
-        values = torch.randn(1, 4, 64, DIM)
+        values = torch.randn(1, 4, 64, DIM).to(device)
         compressed = value_compressor.compress(values)
         decompressed = value_compressor.decompress(compressed)
 
@@ -91,11 +100,13 @@ class TestValueCompressor:
 class TestAsymmetricAttention:
     """Validate attention score estimation from compressed keys."""
 
-    def test_scores_shape(self, key_compressor: TurboQuantCompressorV2) -> None:
+    def test_scores_shape(
+        self, key_compressor: TurboQuantCompressorV2, device: torch.device
+    ) -> None:
         """Asymmetric attention scores should have correct output shape."""
         batch, heads, q_len, kv_len = 1, 4, 1, 32
-        queries = torch.randn(batch, heads, q_len, DIM)
-        keys = torch.randn(batch, heads, kv_len, DIM)
+        queries = torch.randn(batch, heads, q_len, DIM).to(device)
+        keys = torch.randn(batch, heads, kv_len, DIM).to(device)
 
         compressed = key_compressor.compress(keys)
         scores = key_compressor.asymmetric_attention_scores(queries, compressed)
@@ -103,7 +114,7 @@ class TestAsymmetricAttention:
         assert scores.shape == (batch, heads, q_len, kv_len)
 
     def test_scores_correlate_with_true(
-        self, key_compressor: TurboQuantCompressorV2
+        self, key_compressor: TurboQuantCompressorV2, device: torch.device
     ) -> None:
         """Estimated attention scores should correlate highly with true scores.
 
@@ -111,8 +122,8 @@ class TestAsymmetricAttention:
         from compressed keys.
         """
         batch, heads, q_len, kv_len = 1, 4, 1, 32
-        queries = torch.randn(batch, heads, q_len, DIM)
-        keys = torch.randn(batch, heads, kv_len, DIM)
+        queries = torch.randn(batch, heads, q_len, DIM).to(device)
+        keys = torch.randn(batch, heads, kv_len, DIM).to(device)
 
         true_scores = torch.matmul(queries.float(), keys.float().transpose(-2, -1))
 
@@ -131,11 +142,13 @@ class TestAsymmetricAttention:
                 f"Head {h} attention score correlation {correlation:.4f} too low"
             )
 
-    def test_multi_query_tokens(self, key_compressor: TurboQuantCompressorV2) -> None:
+    def test_multi_query_tokens(
+        self, key_compressor: TurboQuantCompressorV2, device: torch.device
+    ) -> None:
         """Asymmetric scores should work with multiple query tokens."""
         batch, heads, q_len, kv_len = 1, 2, 4, 16
-        queries = torch.randn(batch, heads, q_len, DIM)
-        keys = torch.randn(batch, heads, kv_len, DIM)
+        queries = torch.randn(batch, heads, q_len, DIM).to(device)
+        keys = torch.randn(batch, heads, kv_len, DIM).to(device)
 
         compressed = key_compressor.compress(keys)
         scores = key_compressor.asymmetric_attention_scores(queries, compressed)

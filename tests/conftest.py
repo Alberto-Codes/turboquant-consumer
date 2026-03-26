@@ -30,6 +30,24 @@ def _seed_torch() -> None:
     torch.manual_seed(SEED)
 
 
+@pytest.fixture(
+    params=[
+        "cpu",
+        pytest.param("cuda", marks=pytest.mark.gpu),
+    ]
+)
+def device(request: pytest.FixtureRequest) -> torch.device:
+    """Device fixture for cross-device validation (CPU and GPU).
+
+    GPU tests are skipped when CUDA is not available.
+    Run GPU tests only: pytest -m gpu
+    Exclude GPU tests: pytest -m "not gpu"
+    """
+    if request.param == "cuda" and not torch.cuda.is_available():
+        pytest.skip("CUDA not available")
+    return torch.device(request.param)
+
+
 @pytest.fixture(scope="module")
 def codebook_3bit() -> LloydMaxCodebook:
     """Module-scoped Lloyd-Max codebook for dim=128, bits=3.

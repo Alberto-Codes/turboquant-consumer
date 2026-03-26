@@ -150,8 +150,16 @@ podman run --rm \
 |------|--------|--------|
 | 1.1 | Create `Containerfile` for dev environment (ROCm + project deps) | ✅ `infra/Containerfile.rocm` + `infra/run-rocm.sh` |
 | 1.2 | Mount project sources as volumes | ✅ Handled by `run-rocm.sh` (+ HF cache mount) |
-| 1.3 | Add cross-device validation test fixtures (CPU vs GPU) | **Next** — parametrize existing tests with `device=["cpu", "cuda"]` |
+| 1.3 | Add cross-device validation test fixtures (CPU vs GPU) | ✅ 21 tests parametrized, 84/84 pass on AMD GPU |
 | 1.4 | Verify `uv sync` works inside container with ROCm PyTorch | Not started |
+
+**Phase 1.3 Results — Cross-Device Test Parametrization (2026-03-26):**
+
+Spike audit found **zero source changes needed** — all internal state tensors (`codebook.centroids`, `codebook.boundaries`, `self.rotation`, `self.qjl_matrix`) already use `.to(input.device)` before operations.
+
+Implementation: Added `device` fixture in `conftest.py` parametrized with `["cpu", pytest.param("cuda", marks=pytest.mark.gpu)]`. 21 tests across `test_lloyd_max.py`, `test_quantizer.py`, and `test_compressors.py` now run on both CPU and GPU. GPU tests skip gracefully when CUDA is unavailable.
+
+Validated inside ROCm container on Radeon 890M (gfx1150): **84/84 tests passed** with no tolerance relaxation — all existing `atol`, cosine similarity, and correlation thresholds hold on AMD GPU.
 
 #### Phase 2 — Core Algorithm on AMD
 
