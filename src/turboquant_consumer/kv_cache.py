@@ -187,46 +187,55 @@ class TurboQuantKVCache:
 class _CompressedLayer:
     """Storage-optimized compressed representation of one cache layer.
 
+    Indices may be stored unpacked (one uint8 per index, for 2-3 bit)
+    or nibble-packed (two 4-bit indices per uint8, for 4-bit). The
+    ``packed`` flag indicates which format is used.
+
     Attributes:
-        indices (torch.Tensor): Lloyd-Max centroid indices in uint8, shape
-            ``(batch, heads, seq_len, head_dim)``.
+        indices (torch.Tensor): Lloyd-Max centroid indices in uint8.
+            Unpacked shape: ``(batch, heads, seq_len, head_dim)``.
+            Nibble-packed shape: ``(batch, heads, seq_len, head_dim // 2)``.
         norms (torch.Tensor): Vector norms in float32, shape
             ``(batch, heads, seq_len, 1)``. Float32 is required --
             float16 causes output degradation at 10K+ token sequences
             due to accumulated norm precision loss across layers.
+        packed (bool): True if indices are nibble-packed (4-bit mode).
 
     Examples:
         ```python
         layer = _CompressedLayer(
-            indices=torch.zeros(1, 8, 10, 128, dtype=torch.uint8),
+            indices=torch.zeros(1, 8, 10, 64, dtype=torch.uint8),
             norms=torch.ones(1, 8, 10, 1),
+            packed=True,
         )
-        layer.indices.shape  # torch.Size([1, 8, 10, 128])
+        layer.indices.shape  # torch.Size([1, 8, 10, 64]) — nibble-packed
         ```
     """
 
     indices: torch.Tensor
     norms: torch.Tensor
+    packed: bool = False
 
 
 class CompressedDynamicCache:
-    """KV cache with real VRAM savings via uint8 indices + fp16 norms.
+    """KV cache with real VRAM savings via compressed index storage.
 
     Stores TurboQuant-compressed representations and dequantizes lazily
     on each cache read. Only one layer's decompressed tensors are held
     in memory at a time — previous layers are freed on the next update.
 
-    Storage per token per head (3-bit, head_dim=128):
+    Storage per token per head (head_dim=128):
 
-    ============  =======  ==========
-    Component     Dtype    Bytes
-    ============  =======  ==========
-    Indices       uint8    128
-    Norms         float32  4
-    **Total**              **132**
-    ============  =======  ==========
+    ============  =======  =====  ===========  ===========
+    Mode          Dtype    Bytes  Compression  Quality
+    ============  =======  =====  ===========  ===========
+    FP16 baseline fp16     256    1.0x         —
+    TQ3 (3-bit)   uint8    132    1.94x        ~95% cosine
+    TQ4 (4-bit)   nibble   68     3.76x        ~97% cosine
+    ============  =======  =====  ===========  ===========
 
-    Compared to FP16 baseline (256 bytes), this is ~1.94x compression.
+    At ``bits=4``, indices are nibble-packed (two 4-bit values per
+    byte), nearly doubling compression over TQ3 with better quality.
     Float32 norms are required — fp16 causes output degradation at
     10K+ token sequences due to accumulated precision loss.
 
@@ -264,13 +273,23 @@ class CompressedDynamicCache:
 
         Args:
             cache: A HuggingFace DynamicCache instance to wrap.
-            head_dim: Dimension of each attention head.
-            bits: Quantization bits per coordinate (default 3).
+            head_dim: Dimension of each attention head. Must be even
+                when ``bits=4`` (required for nibble packing pairs).
+            bits: Quantization bits per coordinate (default 3). Use 4
+                for nibble-packed storage (3.76x compression).
             seed: Random seed for reproducibility.
+
+        Raises:
+            ValueError: If ``bits=4`` and ``head_dim`` is odd.
         """
+        if bits == 4 and head_dim % 2 != 0:
+            msg = f"bits=4 requires even head_dim for nibble packing, got {head_dim}"
+            raise ValueError(msg)
+
         self.cache = cache
         self.head_dim = head_dim
         self.bits = bits
+        self._nibble_packed = bits == 4
         self.enabled = True
 
         self.key_compressor = TurboQuantCompressorMSE(head_dim, bits, seed=seed)
@@ -286,24 +305,66 @@ class CompressedDynamicCache:
         cache.update = self._compressed_update
         cache.get_seq_length = self._compressed_get_seq_length
 
+    @staticmethod
+    def _nibble_pack(indices: torch.Tensor) -> torch.Tensor:
+        """Pack pairs of 4-bit indices into single uint8 bytes.
+
+        Args:
+            indices: uint8 tensor with values in [0, 15], last dim must
+                be even. Shape ``(..., D)``.
+
+        Returns:
+            uint8 tensor of shape ``(..., D // 2)`` with two indices
+            per byte (high nibble = even index, low nibble = odd index).
+        """
+        even = indices[..., 0::2]
+        odd = indices[..., 1::2]
+        return (even << 4) | odd
+
+    @staticmethod
+    def _nibble_unpack(packed: torch.Tensor) -> torch.Tensor:
+        """Unpack nibble-packed uint8 bytes into pairs of 4-bit indices.
+
+        Args:
+            packed: uint8 tensor of shape ``(..., D // 2)`` with two
+                indices per byte.
+
+        Returns:
+            Long tensor of shape ``(..., D)`` with individual indices
+            suitable for centroid lookup.
+        """
+        high = (packed >> 4).long()
+        low = (packed & 0x0F).long()
+        return torch.stack([high, low], dim=-1).flatten(-2)
+
     def _compress_tensor(
         self,
         compressor: TurboQuantCompressorMSE,
         tensor: torch.Tensor,
     ) -> _CompressedLayer:
-        """Compress a tensor to uint8 indices + float32 norms.
+        """Compress a tensor to packed/unpacked indices + float32 norms.
+
+        At ``bits=4``, indices are nibble-packed (two per byte) for
+        3.76x compression. At other bit widths, indices are stored as
+        one uint8 per index.
 
         Args:
             compressor: The MSE compressor instance.
             tensor: Input tensor, shape ``(batch, heads, seq_len, head_dim)``.
 
         Returns:
-            Compressed layer with uint8 indices and float32 norms.
+            Compressed layer with indices and float32 norms.
         """
         compressed = compressor.compress(tensor)
+        indices = compressed.indices.to(torch.uint8)
+
+        if self._nibble_packed:
+            indices = self._nibble_pack(indices)
+
         return _CompressedLayer(
-            indices=compressed.indices.to(torch.uint8),
+            indices=indices,
             norms=compressed.norms.float(),
+            packed=self._nibble_packed,
         )
 
     def _dequantize_layer(
@@ -313,18 +374,24 @@ class CompressedDynamicCache:
     ) -> torch.Tensor:
         """Dequantize a compressed layer back to the original dtype.
 
-        Converts uint8 indices to long for centroid lookup (PyTorch
-        treats uint8 as boolean masks during fancy indexing).
+        Unpacks nibble-packed indices when applicable, then converts
+        to long for centroid lookup (PyTorch treats uint8 as boolean
+        masks during fancy indexing).
 
         Args:
             compressor: The MSE compressor instance.
-            layer: Compressed layer with uint8 indices and float32 norms.
+            layer: Compressed layer with indices and float32 norms.
 
         Returns:
             Reconstructed tensor in the original dtype.
         """
+        if layer.packed:
+            indices = self._nibble_unpack(layer.indices)
+        else:
+            indices = layer.indices.long()
+
         compressed = CompressedValues(
-            indices=layer.indices.long(),
+            indices=indices,
             norms=layer.norms,
             original_dtype=self._original_dtype,
         )
@@ -337,16 +404,19 @@ class CompressedDynamicCache:
     ) -> _CompressedLayer:
         """Concatenate two compressed layers along the sequence dimension.
 
+        Preserves the ``packed`` flag from the existing layer.
+
         Args:
             existing: Previously stored compressed tokens.
             new: Newly compressed tokens to append.
 
         Returns:
-            Combined compressed layer.
+            Combined compressed layer with same packing format.
         """
         return _CompressedLayer(
             indices=torch.cat([existing.indices, new.indices], dim=-2),
             norms=torch.cat([existing.norms, new.norms], dim=-2),
+            packed=existing.packed,
         )
 
     def _compressed_update(
@@ -481,21 +551,30 @@ class CompressedDynamicCache:
     def baseline_vram_bytes(self) -> int:
         """Estimate FP16 VRAM that would be used without compression.
 
+        Accounts for nibble-packed indices by doubling the last
+        dimension to recover the original head_dim.
+
         Returns:
             Total bytes if keys and values were stored as FP16 tensors.
         """
         total = 0
         for layer in [*self._compressed_keys, *self._compressed_values]:
             b, h, s, d = layer.indices.shape
+            # Nibble-packed indices have d = head_dim // 2
+            if layer.packed:
+                d = d * 2
             total += b * h * s * d * 2  # FP16 = 2 bytes per element
         return total
 
     def compression_stats(self) -> dict[str, Any]:
         """Return compression statistics for reporting.
 
+        Reports the true ``head_dim`` (not the packed index dimension)
+        and includes a ``nibble_packed`` flag.
+
         Returns:
             Dict with layer count, sequence length, compressed/baseline
-            sizes in MiB, compression ratio, and VRAM savings.
+            sizes in MiB, compression ratio, packing mode, and VRAM savings.
         """
         if not self._compressed_keys:
             return {}
@@ -505,15 +584,16 @@ class CompressedDynamicCache:
         ratio = baseline_bytes / compressed_bytes if compressed_bytes > 0 else 0.0
 
         layer = self._compressed_keys[0]
-        b, h, s, d = layer.indices.shape
+        b, h, s, _ = layer.indices.shape
 
         return {
             "num_layers": len(self._compressed_keys),
             "seq_len": s,
             "batch_size": b,
             "num_heads": h,
-            "head_dim": d,
+            "head_dim": self.head_dim,
             "bits": self.bits,
+            "nibble_packed": self._nibble_packed,
             "compressed_mib": compressed_bytes / (1024 * 1024),
             "baseline_mib": baseline_bytes / (1024 * 1024),
             "compression_ratio": round(ratio, 2),
