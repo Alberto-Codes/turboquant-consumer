@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/Alberto-Codes/turboquant-vllm/compare/v1.0.0...v1.1.0) (2026-03-27)
+
+
+### Features
+
+* **container:** vLLM Containerfile + per-layer cosine tests ([#3](https://github.com/Alberto-Codes/turboquant-vllm/issues/3)) ([a71abc7](https://github.com/Alberto-Codes/turboquant-vllm/commit/a71abc7616b765bd29410a8b3e88f92061d75c0d))
+
+
+### Documentation
+
+* add MkDocs site with API reference and container guide ([a71abc7](https://github.com/Alberto-Codes/turboquant-vllm/commit/a71abc7616b765bd29410a8b3e88f92061d75c0d))
+
 ## [1.0.0](https://github.com/Alberto-Codes/turboquant-vllm/compare/v0.1.0...v1.0.0) (2026-03-27)
 
 
