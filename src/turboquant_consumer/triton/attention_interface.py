@@ -217,8 +217,9 @@ def install_fused_tq4_kv(model: torch.nn.Module, cache: CompressedDynamicCache) 
     """Activate fused TQ4 K+V attention on *model* with cache side-channel.
 
     Registers the ``triton_fa_tq4_kv`` backend, stashes *cache* on each
-    attention layer as ``module._tq4_cache``, and sets the model's
-    ``_attn_implementation``.
+    attention layer as ``module._tq4_cache``, sets the model's
+    ``_attn_implementation``, and enables ``fused_mode`` on the cache
+    to skip wasted decompression (P5b optimization).
 
     Args:
         model: HuggingFace model with attention layers that have ``layer_idx``.
@@ -235,6 +236,9 @@ def install_fused_tq4_kv(model: torch.nn.Module, cache: CompressedDynamicCache) 
         raise AttributeError(msg)
     config._attn_implementation = "triton_fa_tq4_kv"
 
+    # Enable fused mode: skip decompression in cache.update()
+    cache.fused_mode = True
+
     # Stash cache reference on each attention layer
     for module in model.modules():
         if hasattr(module, "layer_idx"):
@@ -244,8 +248,8 @@ def install_fused_tq4_kv(model: torch.nn.Module, cache: CompressedDynamicCache) 
 def uninstall_fused_tq4_kv(model: torch.nn.Module) -> None:
     """Remove fused TQ4 attention and restore SDPA.
 
-    Removes ``_tq4_cache`` from attention layers and resets
-    ``_attn_implementation`` to ``"sdpa"``.
+    Removes ``_tq4_cache`` from attention layers, disables ``fused_mode``
+    on the cache, and resets ``_attn_implementation`` to ``"sdpa"``.
 
     Args:
         model: Model previously configured with ``install_fused_tq4_kv``.
@@ -256,4 +260,8 @@ def uninstall_fused_tq4_kv(model: torch.nn.Module) -> None:
 
     for module in model.modules():
         if hasattr(module, "_tq4_cache"):
-            del module._tq4_cache
+            cache = getattr(module, "_tq4_cache", None)
+            if cache is not None and hasattr(cache, "fused_mode"):
+                cache.fused_mode = False  # type: ignore[union-attr]
+            if hasattr(module, "_tq4_cache"):
+                delattr(module, "_tq4_cache")

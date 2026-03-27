@@ -250,6 +250,8 @@ class CompressedDynamicCache:
         bits (int): Quantization bits per coordinate.
         head_dim (int): Model head dimension.
         enabled (bool): Whether compression is active.
+        fused_mode (bool): When True, skip decompression in ``update()``
+            (fused kernel reads compressed data via ``get_compressed()``).
         rotation (torch.Tensor): Shared rotation matrix ``[head_dim, head_dim]``.
         centroids (torch.Tensor): Shared codebook ``[2^bits]``.
 
@@ -273,8 +275,8 @@ class CompressedDynamicCache:
     ) -> None:
         """Initialize the compressed KV cache wrapper.
 
-        Sets up compressors and internal storage for both compressed
-        representations and incremental decompressed buffers.
+        Sets up compressors, internal storage for compressed representations,
+        and incremental decompressed buffers. ``fused_mode`` starts disabled.
 
         Args:
             cache: A HuggingFace DynamicCache instance to wrap.
@@ -305,6 +307,7 @@ class CompressedDynamicCache:
         self._decompressed_k: list[torch.Tensor | None] = []
         self._decompressed_v: list[torch.Tensor | None] = []
         self._original_dtype: torch.dtype = torch.bfloat16
+        self.fused_mode = False
 
         # Patch cache methods
         self._original_update = cache.update
@@ -433,12 +436,12 @@ class CompressedDynamicCache:
         layer_idx: int,
         cache_kwargs: dict[str, Any] | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Compress new tokens and incrementally dequantize.
+        """Compress new tokens and optionally dequantize.
 
-        Stores compressed representations permanently. Uses incremental
-        dequantization: only the NEW tokens are decompressed and appended
-        to a running buffer (avoiding re-dequantizing all cached tokens
-        at every step).
+        Stores compressed representations permanently. In normal mode,
+        uses incremental dequantization (only NEW tokens decompressed).
+        In ``fused_mode``, skips decompression entirely — the fused TQ4
+        kernel reads compressed data via ``get_compressed()``.
 
         Works with the ``DynamicCache.layers`` API (transformers >=4.57)
         where each layer is a ``DynamicLayer`` holding ``.keys`` and
@@ -486,6 +489,20 @@ class CompressedDynamicCache:
             self._compressed_values[layer_idx] = self._cat_layers(
                 self._compressed_values[layer_idx], new_cv
             )
+
+        # Fused mode: skip decompression entirely. The fused TQ4 kernel
+        # reads compressed data via get_compressed(), so decompressed
+        # buffers are never needed. Return key_states/value_states as
+        # placeholders to satisfy the DynamicLayer API.
+        if self.fused_mode:
+            layer = self.cache.layers[layer_idx]
+            if not layer.is_initialized:
+                layer.lazy_initialization(key_states)
+            # Store minimal placeholders — just the new tokens, not the
+            # full cache. The fused attention function ignores these.
+            layer.keys = key_states
+            layer.values = value_states
+            return key_states, value_states
 
         # Incremental dequantization: only decompress the NEW tokens
         # and cat onto a running buffer. Avoids re-dequantizing all 11K+

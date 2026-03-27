@@ -1,6 +1,6 @@
 {
   "experiment": "010-fused-tq4-kv-e2e",
-  "date": "2026-03-26 20:38:13",
+  "date": "2026-03-26 21:10:02",
   "model_id": "allenai/Molmo2-4B",
   "bits": 4,
   "max_new_tokens": 64,
@@ -85,7 +85,7 @@
       ],
       "vram_peak_mib": 10027.6,
       "elapsed_s": 1.45,
-      "tok_per_s": 44.02
+      "tok_per_s": 44.07
     },
     "unfused_tq4": {
       "label": "text-UnfusedTQ4",
@@ -159,8 +159,8 @@
         13
       ],
       "vram_peak_mib": 10030.5,
-      "elapsed_s": 4.89,
-      "tok_per_s": 13.08
+      "elapsed_s": 4.69,
+      "tok_per_s": 13.64
     },
     "fused_tq4_kv": {
       "label": "text-FusedTQ4KV",
@@ -233,9 +233,9 @@
         11,
         323
       ],
-      "vram_peak_mib": 10044.8,
-      "elapsed_s": 5.37,
-      "tok_per_s": 11.91
+      "vram_peak_mib": 10039.7,
+      "elapsed_s": 5.08,
+      "tok_per_s": 12.6
     },
     "sdpa_vs_unfused": {
       "label": "text SDPA\u2192Unfused",
@@ -243,7 +243,7 @@
       "tokens_matching": 16,
       "match_rate": 0.25,
       "texts_identical": false,
-      "throughput_ratio": 0.297
+      "throughput_ratio": 0.31
     },
     "sdpa_vs_fused": {
       "label": "text SDPA\u2192Fused",
@@ -251,7 +251,7 @@
       "tokens_matching": 9,
       "match_rate": 0.1406,
       "texts_identical": false,
-      "throughput_ratio": 0.271
+      "throughput_ratio": 0.286
     },
     "unfused_vs_fused": {
       "label": "text Unfused\u2192Fused",
@@ -259,7 +259,7 @@
       "tokens_matching": 9,
       "match_rate": 0.1406,
       "texts_identical": false,
-      "throughput_ratio": 0.911
+      "throughput_ratio": 0.924
     }
   },
   "image": {
