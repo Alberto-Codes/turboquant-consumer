@@ -250,13 +250,15 @@ class CompressedDynamicCache:
         bits (int): Quantization bits per coordinate.
         head_dim (int): Model head dimension.
         enabled (bool): Whether compression is active.
+        rotation (torch.Tensor): Shared rotation matrix ``[head_dim, head_dim]``.
+        centroids (torch.Tensor): Shared codebook ``[2^bits]``.
 
     Examples:
         ```python
         from transformers import DynamicCache
 
         cache = DynamicCache()
-        compressed = CompressedDynamicCache(cache, head_dim=128, bits=3)
+        compressed = CompressedDynamicCache(cache, head_dim=128, bits=4)
         compressed.vram_bytes()  # 0
         ```
     """
@@ -540,6 +542,46 @@ class CompressedDynamicCache:
         if layer_idx >= len(self._compressed_keys):
             return 0
         return int(self._compressed_keys[layer_idx].indices.shape[-2])
+
+    def get_compressed(
+        self, layer_idx: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Return compressed K and V for a layer (fused kernel API).
+
+        Provides the raw nibble-packed indices and norms without
+        dequantization, for use by the fused TQ4 Flash Attention kernel.
+
+        Args:
+            layer_idx: Transformer layer index.
+
+        Returns:
+            ``(k_packed, k_norms, v_packed, v_norms)`` where packed tensors
+            are uint8 ``[batch, heads, seq, head_dim//2]`` and norms are
+            fp32 ``[batch, heads, seq, 1]``.
+        """
+        k = self._compressed_keys[layer_idx]
+        v = self._compressed_values[layer_idx]
+        return k.indices, k.norms, v.indices, v.norms
+
+    @property
+    def rotation(self) -> torch.Tensor:
+        """Shared orthogonal rotation matrix ``[head_dim, head_dim]`` fp32.
+
+        K and V use the same rotation (same seed).
+
+        Returns:
+            The rotation matrix from the key compressor's quantizer.
+        """
+        return self.key_compressor.quantizer.rotation
+
+    @property
+    def centroids(self) -> torch.Tensor:
+        """Shared Lloyd-Max codebook ``[2^bits]`` fp32.
+
+        Returns:
+            Centroid values from the key compressor's quantizer.
+        """
+        return self.key_compressor.quantizer.codebook.centroids
 
     def disable(self) -> None:
         """Disable compression, passing through to original update."""

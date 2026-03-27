@@ -12,7 +12,9 @@ Attributes:
     triton_flash_attention_tq4_kv: Fused TQ4 FA with compressed K+V tiles.
     triton_fa_forward: HF AttentionInterface-compatible wrapper.
     register_triton_fa: Register the ``triton_fa`` backend globally.
-    install_triton_fa: Register and activate on a specific model.
+    install_triton_fa: Register and activate vanilla FA on a model.
+    install_fused_tq4_kv: Activate fused TQ4 K+V with cache side-channel.
+    uninstall_fused_tq4_kv: Remove fused attention and restore SDPA.
     fused_qk_scores: Legacy Q@K^T-only kernel (kept for reference).
 
 Examples:
@@ -38,9 +40,12 @@ See Also:
 """
 
 from turboquant_consumer.triton.attention_interface import (
+    install_fused_tq4_kv,
     install_triton_fa,
     register_triton_fa,
     triton_fa_forward,
+    triton_fa_tq4_kv_forward,
+    uninstall_fused_tq4_kv,
 )
 from turboquant_consumer.triton.flash_attention import triton_flash_attention
 from turboquant_consumer.triton.flash_attention_tq4 import triton_flash_attention_tq4
@@ -56,7 +61,10 @@ __all__ = [
     "triton_flash_attention_tq4",
     "triton_flash_attention_tq4_kv",
     "triton_fa_forward",
+    "triton_fa_tq4_kv_forward",
     "register_triton_fa",
     "install_triton_fa",
+    "install_fused_tq4_kv",
+    "uninstall_fused_tq4_kv",
     "fused_qk_scores",
 ]
