@@ -648,7 +648,7 @@ Override buffer allocation to use TQ4 page size (68 bytes/token/head vs 256 FP16
 | 3c.6 | Smoke test: `vllm serve` + Molmo2-8B with TQ4 packed cache, verify VRAM reduction | ✅ |
 | 3c.7 | Profile: is PyTorch compress/dequant the bottleneck, or Flash Attention? | ✅ |
 | 3c.8 | Triton fused read+dequant kernel + pre/post-rotation optimization | ✅ |
-| 3c.9 | Triton fused compress+write kernel (compress is now 53% of decode at 4096) | |
+| 3c.9 | Triton fused compress kernel (norm+rotate+bucketize+pack in one launch) | ✅ |
 | 3c.10 | Validate bit-for-bit match with pure PyTorch path | |
 
 169 tests pass. All pre-commit hooks green.
@@ -667,6 +667,12 @@ Override buffer allocation to use TQ4 page size (68 bytes/token/head vs 256 FP16
 - Pre-rotate Q + post-rotate output: ~0.048ms total (constant, not cache-proportional)
 - Compress is now the dominant cost at ~0.149ms (53% of decode at 4096)
 - Architecture: `tq4_decompress()` Triton kernel (no rotation) + `forward()` pre/post-rotates Q and output
+
+**Phase 3c.9 result (2026-03-27):** Triton fused compress (norm+rotate+bucketize+pack):
+- Compress 1 token K+V: 0.145ms → **0.033ms** (4.4x faster)
+- Pre-split rotation.T into even/odd column halves for contiguous loads + direct nibble output
+- Full decode step at 4096 cache: 0.596ms → **0.162ms** (3.7x end-to-end speedup)
+- Cost now nearly flat across cache lengths (0.133-0.162ms)
 
 **Smoke test result (2026-03-27):** vLLM 0.18.0 + Molmo2-8B + `--attention-backend CUSTOM` with packed TQ4 uint8 cache:
 - Model loads, serves on port 8100 ✅

@@ -247,6 +247,9 @@ class TestTQ4PackedCacheRoundTrip:
         impl._tq4_rotation = quantizer.rotation
         impl._tq4_centroids = quantizer.codebook.centroids
         impl._tq4_boundaries = quantizer.codebook.boundaries
+        rot_t = quantizer.rotation.T.contiguous()
+        impl._tq4_rot_T_even = rot_t[:, 0::2].contiguous()
+        impl._tq4_rot_T_odd = rot_t[:, 1::2].contiguous()
         impl._tq4_on_device = False
 
         half_D = self.HEAD_SIZE // 2

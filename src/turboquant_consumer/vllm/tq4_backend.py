@@ -36,6 +36,7 @@ from vllm.v1.attention.backends.registry import (
 from vllm.v1.kv_cache_interface import FullAttentionSpec
 
 from turboquant_consumer.quantizer import TurboQuantMSE
+from turboquant_consumer.triton.tq4_compress import tq4_compress
 from turboquant_consumer.triton.tq4_decompress import tq4_decompress
 
 if TYPE_CHECKING:
@@ -191,6 +192,10 @@ class TQ4AttentionImpl(FlashAttentionImpl):
         self._tq4_rotation = quantizer.rotation  # (D, D) fp32
         self._tq4_centroids = quantizer.codebook.centroids  # (16,) fp32
         self._tq4_boundaries = quantizer.codebook.boundaries  # (15,) fp32
+        # Pre-split rotation.T for fused compress kernel (contiguous loads)
+        rot_t = quantizer.rotation.T.contiguous()
+        self._tq4_rot_T_even = rot_t[:, 0::2].contiguous()  # (D, D//2) fp32
+        self._tq4_rot_T_odd = rot_t[:, 1::2].contiguous()  # (D, D//2) fp32
         self._tq4_on_device = False
 
         # Byte layout offsets within the last dimension of the packed cache.
@@ -219,6 +224,8 @@ class TQ4AttentionImpl(FlashAttentionImpl):
             self._tq4_rotation = self._tq4_rotation.to(device)
             self._tq4_centroids = self._tq4_centroids.to(device)
             self._tq4_boundaries = self._tq4_boundaries.to(device)
+            self._tq4_rot_T_even = self._tq4_rot_T_even.to(device)
+            self._tq4_rot_T_odd = self._tq4_rot_T_odd.to(device)
             self._tq4_on_device = True
 
     # ----- compression / decompression -----
@@ -229,24 +236,19 @@ class TQ4AttentionImpl(FlashAttentionImpl):
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compress ``(N, H, D)`` -> nibble-packed indices + fp32 norms.
 
+        Uses the fused Triton kernel (Phase 3c.9) that performs norm +
+        normalize + rotation + bucketize + pack in a single launch.
+
         Returns:
             packed: ``(N, H, D//2)`` uint8 -- two 4-bit centroid indices per byte.
             norms: ``(N, H, 1)`` fp32 -- vector norms.
         """
-        N, H, D = x.shape
-        flat = x.reshape(N * H, D).float()
-
-        norms = torch.norm(flat, dim=-1, keepdim=True)
-        normalized = flat / (norms + 1e-10)
-        rotated = normalized @ self._tq4_rotation.T
-
-        indices = torch.bucketize(rotated, self._tq4_boundaries)
-        indices = indices.clamp(0, (1 << TQ4_BITS) - 1)
-
-        idx_u8 = indices.to(torch.uint8)
-        packed = (idx_u8[:, 0::2] << 4) | idx_u8[:, 1::2]
-
-        return packed.reshape(N, H, D // 2), norms.reshape(N, H, 1)
+        return tq4_compress(
+            x,
+            self._tq4_rot_T_even,
+            self._tq4_rot_T_odd,
+            self._tq4_boundaries,
+        )
 
     def _decompress(
         self,
