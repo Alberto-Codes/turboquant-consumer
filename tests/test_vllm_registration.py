@@ -45,7 +45,7 @@ class TestTQ4Registration:
         # Snapshot state
         try:
             orig_custom_cls = AttentionBackendEnum.CUSTOM.get_class()
-        except Exception:
+        except ValueError:
             orig_custom_cls = None
         had_tq4_spec = TQ4FullAttentionSpec in spec_manager_map
         orig_get_kv = Attention.get_kv_cache_spec
