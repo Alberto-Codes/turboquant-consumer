@@ -107,6 +107,9 @@ check-extra-raises = true
 [tool.docvet.presence]
 min-coverage = 100.0
 
+[tool.ty]
+exclude = ["src/turboquant_vllm/vllm/"]
+
 [tool.ty.src]
 include = ["src", "tests"]
 
