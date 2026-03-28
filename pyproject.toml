@@ -111,7 +111,7 @@ min-coverage = 100.0
 include = ["src", "tests"]
 
 [[tool.ty.overrides]]
-include = ["src/turboquant_vllm/vllm/**", "tests/test_vllm_backend.py"]
+include = ["src/turboquant_vllm/vllm/**", "tests/test_vllm_*.py"]
 rules.unresolved-import = "ignore"
 rules.unknown-argument = "ignore"
 
