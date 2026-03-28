@@ -234,6 +234,9 @@ def _format_human_summary(result: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> None:
     """CLI entry point for the verify command.
 
+    Parses ``--model``, ``--bits`` (3 or 4), ``--threshold``, and ``--json``
+    flags, runs verification, and exits 0 (PASS) or 1 (FAIL).
+
     Args:
         argv: Command-line arguments. Uses sys.argv[1:] if None.
     """
@@ -248,6 +251,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--bits",
         type=int,
+        choices=[3, 4],
         required=True,
         help="Quantization bits per coordinate (3 or 4)",
     )
