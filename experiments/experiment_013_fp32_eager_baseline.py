@@ -279,7 +279,7 @@ def run_experiment(
             fused_wrappers.append(w)
             install_fused_tq4_kv(model_ref[0], w)
 
-        DynamicCache.__init__ = fused_patched_init  # type: ignore[method-assign]
+        DynamicCache.__init__ = fused_patched_init
         try:
             path_results["fused_tq4"] = _run_inference(
                 model,
@@ -290,7 +290,7 @@ def run_experiment(
                 image,
             )
         finally:
-            DynamicCache.__init__ = original_init  # type: ignore[method-assign]
+            DynamicCache.__init__ = original_init
             uninstall_fused_tq4_kv(model)
         del model
         torch.cuda.empty_cache()

@@ -480,14 +480,14 @@ class TQ4AttentionImpl(FlashAttentionImpl):
             max_seqlen_k=attn_metadata.max_seq_len,
             softmax_scale=self.scale,
             causal=attn_metadata.causal,
-            alibi_slopes=self.alibi_slopes,  # ty: ignore[invalid-argument-type]
+            alibi_slopes=self.alibi_slopes,
             window_size=list(self.sliding_window)
             if self.sliding_window is not None
             else None,
             block_table=attn_metadata.block_table,
             softcap=self.logits_soft_cap,
             scheduler_metadata=attn_metadata.scheduler_metadata,
-            fa_version=self.vllm_flash_attn_version,  # ty: ignore[invalid-argument-type]
+            fa_version=self.vllm_flash_attn_version,
             q_descale=q_descale,
             k_descale=k_descale,
             v_descale=v_descale,
@@ -558,5 +558,5 @@ def register_tq4_backend() -> None:
             return TQ4FullAttentionSpec(**kwargs)
         return spec
 
-    Attention.get_kv_cache_spec = _tq4_get_kv_cache_spec  # ty: ignore[invalid-assignment]
+    Attention.get_kv_cache_spec = _tq4_get_kv_cache_spec
     logger.info("TQ4 attention backend registered as CUSTOM (packed cache)")

@@ -271,7 +271,7 @@ def run_experiment(
             w = CompressedDynamicCache(self_cache, head_dim=head_dim, bits=bits)
             wrappers.append(w)
 
-        DynamicCache.__init__ = patched_init  # type: ignore[method-assign]
+        DynamicCache.__init__ = patched_init
         try:
             unfused = _run_inference(
                 model,
@@ -282,7 +282,7 @@ def run_experiment(
                 image,
             )
         finally:
-            DynamicCache.__init__ = original_init  # type: ignore[method-assign]
+            DynamicCache.__init__ = original_init
 
         # Path 3: Fused TQ4 K+V (cache side-channel)
         fused_wrappers: list[CompressedDynamicCache] = []
@@ -298,7 +298,7 @@ def run_experiment(
             fused_wrappers.append(w)
             install_fused_tq4_kv(model, w)
 
-        DynamicCache.__init__ = fused_patched_init  # type: ignore[method-assign]
+        DynamicCache.__init__ = fused_patched_init
         try:
             fused = _run_inference(
                 model,
@@ -309,7 +309,7 @@ def run_experiment(
                 image,
             )
         finally:
-            DynamicCache.__init__ = original_init  # type: ignore[method-assign]
+            DynamicCache.__init__ = original_init
             uninstall_fused_tq4_kv(model)
 
         # Comparisons
