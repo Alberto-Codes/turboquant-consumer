@@ -347,7 +347,7 @@ def _run_tq4(
         w = CompressedDynamicCache(self_cache, head_dim=head_dim, bits=4)
         last_wrapper[0] = w
 
-    DynamicCache.__init__ = patched_init  # type: ignore[method-assign]
+    DynamicCache.__init__ = patched_init
 
     results: dict[str, Any] = {
         "clips": [],
@@ -415,7 +415,7 @@ def _run_tq4(
                 f"{vram_peak:.0f} MiB"
             )
     finally:
-        DynamicCache.__init__ = original_init  # type: ignore[method-assign]
+        DynamicCache.__init__ = original_init
         del model
         torch.cuda.empty_cache()
 

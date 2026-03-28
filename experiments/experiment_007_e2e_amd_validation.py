@@ -246,14 +246,14 @@ def step_3_3_gpu_compressed(
         wrapper = CompressedDynamicCache(self_cache, head_dim=head_dim, bits=bits)
         wrappers.append(wrapper)
 
-    DynamicCache.__init__ = patched_init  # type: ignore[method-assign]
+    DynamicCache.__init__ = patched_init
 
     try:
         result = _run_inference(
             model, processor, prompt, max_new_tokens, f"GPU-TQ{bits}"
         )
     finally:
-        DynamicCache.__init__ = original_init  # type: ignore[method-assign]
+        DynamicCache.__init__ = original_init
 
     if wrappers:
         stats = wrappers[-1].compression_stats()

@@ -240,13 +240,13 @@ def run_experiment(
                 CompressedDynamicCache(self_cache, head_dim=head_dim, bits=bits)
             )
 
-        DynamicCache.__init__ = patched_init  # type: ignore[method-assign]
+        DynamicCache.__init__ = patched_init
         try:
             tq4 = _run_inference(
                 model, processor, prompt, max_new_tokens, f"{label}-TQ4", image
             )
         finally:
-            DynamicCache.__init__ = original_init  # type: ignore[method-assign]
+            DynamicCache.__init__ = original_init
 
         # Compare
         b_ids = sdpa["output_token_ids"]

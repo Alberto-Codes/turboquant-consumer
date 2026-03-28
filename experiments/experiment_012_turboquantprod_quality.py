@@ -173,13 +173,13 @@ def run_experiment(
             CompressedDynamicCache(self_cache, head_dim=head_dim, bits=bits)
         )
 
-    DynamicCache.__init__ = mse_patched_init  # type: ignore[method-assign]
+    DynamicCache.__init__ = mse_patched_init
     try:
         mse_result = _run_inference(
             model, processor, prompt, max_new_tokens, "TQ-MSE-4bit"
         )
     finally:
-        DynamicCache.__init__ = original_init  # type: ignore[method-assign]
+        DynamicCache.__init__ = original_init
     results["tq_mse"] = mse_result
 
     # Path 3: TurboQuantProd 4-bit with estimate_inner_product
@@ -314,7 +314,7 @@ def run_experiment(
 
         # Diagnostic: compare estimated vs reference scores at layer 0
         if layer_idx == 0 and not hasattr(prod_attention_forward, "_diag_done"):
-            prod_attention_forward._diag_done = True  # type: ignore[attr-defined]
+            prod_attention_forward._diag_done = True
             # Reference: standard Q @ K^T * scaling
             key_expanded = key.repeat_interleave(n_groups, dim=1)
             ref_scores = torch.matmul(query, key_expanded.transpose(2, 3)).float()
@@ -355,14 +355,14 @@ def run_experiment(
 
     # Patch DynamicCache to use prod_cache_update
     original_init_update = DynamicCache.update
-    DynamicCache.update = prod_cache_update  # type: ignore[assignment]
+    DynamicCache.update = prod_cache_update
 
     try:
         prod_result = _run_inference(
             model, processor, prompt, max_new_tokens, "TQ-Prod-4bit"
         )
     finally:
-        DynamicCache.update = original_init_update  # type: ignore[assignment]
+        DynamicCache.update = original_init_update
         model.config._attn_implementation = original_impl
         prod_keys.clear()
 
