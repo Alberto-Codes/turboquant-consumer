@@ -86,6 +86,10 @@ def _run_verification(
     Returns:
         Dict with model, bits, status, validation, threshold,
         per_layer_cosine, min_cosine, and versions fields.
+
+    Raises:
+        RuntimeError: If cache layers are missing keys or values after
+            population (indicates a broken compression pipeline).
     """
     from importlib.metadata import version
 
@@ -146,23 +150,29 @@ def _run_verification(
 
     # Compressed cache via context manager
     compressed_cache = DynamicCache()
-    with CompressedDynamicCache(compressed_cache, head_dim=head_dim, bits=bits) as cdc:
+    with CompressedDynamicCache(compressed_cache, head_dim=head_dim, bits=bits):
         for layer_idx in range(num_layers):
             compressed_cache.update(fake_keys, fake_values, layer_idx)
 
         # Compute per-layer cosine similarity
         per_layer_cosine: list[float] = []
         for layer_idx in range(num_layers):
-            ref_k = ref_cache.layers[layer_idx].keys
-            ref_v = ref_cache.layers[layer_idx].values
-            assert ref_k is not None, f"Layer {layer_idx} ref keys missing"
-            assert ref_v is not None, f"Layer {layer_idx} ref values missing"
+            ref_layer = ref_cache.layers[layer_idx]
+            comp_layer = compressed_cache.layers[layer_idx]
 
-            comp_k = cdc._decompressed_k[layer_idx]
-            comp_v = cdc._decompressed_v[layer_idx]
-            # update() always populates decompressed buffers (fused_mode=False)
-            assert comp_k is not None, f"Layer {layer_idx} keys not decompressed"
-            assert comp_v is not None, f"Layer {layer_idx} values not decompressed"
+            ref_k = ref_layer.keys
+            ref_v = ref_layer.values
+            if ref_k is None or ref_v is None:
+                raise RuntimeError(
+                    f"Reference cache missing keys/values for layer {layer_idx}"
+                )
+
+            comp_k = comp_layer.keys
+            comp_v = comp_layer.values
+            if comp_k is None or comp_v is None:
+                raise RuntimeError(
+                    f"Compressed cache missing keys/values for layer {layer_idx}"
+                )
 
             k_cos = torch.nn.functional.cosine_similarity(
                 ref_k.flatten().float(), comp_k.flatten().float(), dim=0

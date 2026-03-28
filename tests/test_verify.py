@@ -21,7 +21,7 @@ def _make_result(
     model: str = "test/model",
     bits: int = 4,
     per_layer_cosine: list[float] | None = None,
-    min_cosine: float = 0.9995,
+    min_cosine: float | None = 0.9995,
     threshold: float = CACHE_PARITY_THRESHOLD,
     validation: str = "VALIDATED",
     family_name: str | None = "Molmo2",
