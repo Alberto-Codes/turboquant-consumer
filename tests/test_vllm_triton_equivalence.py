@@ -13,12 +13,24 @@ vllm = pytest.importorskip("vllm", reason="vLLM not installed")
 
 import torch  # noqa: E402
 
+pytestmark = [pytest.mark.unit]
+
 
 class TestTritonPyTorchEquivalence:
     """Validate Triton kernels produce identical output to the old PyTorch path.
 
     Phase 3c.10 quality gate: the fused Triton compress/decompress kernels
     must match the original multi-op PyTorch implementation exactly.
+
+    Six tests (compress/decompress/round-trip) run on whatever device is
+    available — ``tq4_compress`` and ``tq4_decompress`` have CPU fallback
+    via pure PyTorch paths.  ``test_pre_post_rotation_attention_equivalence``
+    requires CUDA (imports ``flash_attn_varlen_func``) and is marked
+    ``@pytest.mark.gpu`` with a runtime ``pytest.skip`` guard.
+
+    The class-scoped ``_setup`` fixture uses ``.to(device)`` where *device*
+    is CPU when CUDA is unavailable — this is a no-op that returns the same
+    tensor, so the fixture works correctly on CPU.
     """
 
     HEAD_DIM = 128
@@ -195,6 +207,7 @@ class TestTritonPyTorchEquivalence:
 
     # --- end-to-end: pre/post-rotation equivalence ---
 
+    @pytest.mark.gpu
     def test_pre_post_rotation_attention_equivalence(self):
         """Pre-rotate Q + Triton decompress + post-rotate == old path.
 

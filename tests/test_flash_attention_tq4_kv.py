@@ -36,13 +36,13 @@ def device():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.gpu
 class TestTQ4KVFlashAttention:
     """Phase 3: fused K+V TQ4 FA vs unfused (decompress both, vanilla FA)."""
 
     def test_basic_mha(self, device: str, tq4_quantizer) -> None:
         """MHA: fused K+V matches unfused path."""
         B, H, S, D = 1, 4, 32, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
@@ -70,7 +70,6 @@ class TestTQ4KVFlashAttention:
     def test_gqa_4_to_1(self, device: str, tq4_quantizer) -> None:
         """GQA 4:1 (Molmo2-4B: 32Q/8KV)."""
         B, H_Q, H_KV, S, D = 1, 32, 8, 64, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)
@@ -98,7 +97,6 @@ class TestTQ4KVFlashAttention:
     def test_gqa_7_to_1(self, device: str, tq4_quantizer) -> None:
         """GQA 7:1 (Molmo2-8B: 28Q/4KV)."""
         B, H_Q, H_KV, S, D = 1, 28, 4, 64, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)
@@ -127,7 +125,6 @@ class TestTQ4KVFlashAttention:
         """Decode: seq_q=1, long compressed KV cache."""
         B, H_Q, H_KV, D = 1, 32, 8, 128
         S_Q, S_KV = 1, 512
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S_Q, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S_KV, D, device=device, dtype=torch.float16)
@@ -155,7 +152,6 @@ class TestTQ4KVFlashAttention:
     def test_causal(self, device: str, tq4_quantizer) -> None:
         """Causal masking with both K and V compressed."""
         B, H, S, D = 1, 4, 64, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
@@ -184,7 +180,6 @@ class TestTQ4KVFlashAttention:
     def test_long_sequence(self, device: str, tq4_quantizer) -> None:
         """Long sequence multi-tile accumulation precision."""
         B, H_Q, H_KV, S, D = 1, 32, 8, 512, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)
@@ -212,7 +207,6 @@ class TestTQ4KVFlashAttention:
     def test_batched(self, device: str, tq4_quantizer) -> None:
         """Multiple sequences in a batch."""
         B, H_Q, H_KV, S, D = 4, 32, 8, 64, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)

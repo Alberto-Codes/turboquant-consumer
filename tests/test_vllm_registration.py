@@ -26,9 +26,43 @@ from turboquant_vllm.vllm.tq4_backend import (  # noqa: E402
     register_tq4_backend,
 )
 
+pytestmark = [pytest.mark.unit]
+
 
 class TestTQ4Registration:
     """Backend registration and discovery."""
+
+    @pytest.fixture(autouse=True)
+    def _restore_tq4_registration(self):
+        """Save and restore all globals mutated by register_tq4_backend()."""
+        from vllm.model_executor.layers.attention.attention import Attention
+        from vllm.v1.attention.backends.registry import register_backend
+        from vllm.v1.core.single_type_kv_cache_manager import spec_manager_map
+
+        from turboquant_vllm.vllm import tq4_backend as tq4_mod
+        from turboquant_vllm.vllm.tq4_backend import TQ4FullAttentionSpec
+
+        # Snapshot state
+        try:
+            orig_custom_cls = AttentionBackendEnum.CUSTOM.get_class()
+        except Exception:
+            orig_custom_cls = None
+        had_tq4_spec = TQ4FullAttentionSpec in spec_manager_map
+        orig_get_kv = Attention.get_kv_cache_spec
+        orig_mod_global = tq4_mod._original_get_kv_cache_spec
+
+        yield
+
+        # Restore in reverse order
+        tq4_mod._original_get_kv_cache_spec = orig_mod_global
+        Attention.get_kv_cache_spec = orig_get_kv
+        if not had_tq4_spec:
+            spec_manager_map.pop(TQ4FullAttentionSpec, None)
+        if orig_custom_cls is not None:
+            register_backend(
+                AttentionBackendEnum.CUSTOM,
+                f"{orig_custom_cls.__module__}.{orig_custom_cls.__qualname__}",
+            )
 
     def test_register_overrides_custom_enum(self):
         register_tq4_backend()

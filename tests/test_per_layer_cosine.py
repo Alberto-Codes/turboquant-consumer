@@ -24,6 +24,8 @@ NUM_HEADS = 8
 SEQ_LEN = 128
 
 
+# Seeding: relies on conftest._seed_torch autouse fixture (seed=42).
+# @lru_cache ensures body executes only on first call within a module.
 @functools.lru_cache(maxsize=None)
 def _per_layer_cosine(
     bits: int,
@@ -43,7 +45,6 @@ def _per_layer_cosine(
     """
     from transformers import DynamicCache
 
-    torch.manual_seed(42)
     cache = DynamicCache()
     _ = CompressedDynamicCache(cache, head_dim=DIM, bits=bits)
 

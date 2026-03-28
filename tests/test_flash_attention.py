@@ -56,6 +56,7 @@ def _sdpa_reference(
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.gpu
 class TestTritonFlashAttention:
     """Phase 1 validation: Triton FA vs SDPA reference."""
 
@@ -236,7 +237,6 @@ class TestTritonFlashAttention:
         This is the core validation for Phase 1 exit criteria.
         """
         B, H_Q, H_KV, S, D = 1, 28, 4, 256, 128
-        torch.manual_seed(42)
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)
         v = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)

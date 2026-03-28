@@ -21,6 +21,8 @@ from turboquant_vllm.vllm.tq4_backend import (  # noqa: E402  # isort: skip
     _tq4_bytes_per_token_kv,
 )
 
+pytestmark = [pytest.mark.unit]
+
 
 # ---------------------------------------------------------------------------
 # Phase 3c: TQ4 byte layout math

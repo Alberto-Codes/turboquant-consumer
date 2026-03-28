@@ -14,9 +14,13 @@ from .conftest import BITS, BITS_4, DIM, cosine_similarity_flat
 class TestBitWidthSupport:
     """Validate CompressedDynamicCache at non-default bit widths."""
 
-    @pytest.mark.parametrize("bits", [2, 5])
-    def test_compress_decompress_quality(self, bits: int) -> None:
-        """2-bit and 5-bit should produce valid output with expected quality ordering."""
+    @pytest.mark.parametrize(
+        ("bits", "min_cosine"),
+        [(2, 0.75), (5, 0.90)],
+        ids=["2bit", "5bit"],
+    )
+    def test_compress_decompress_quality(self, bits: int, min_cosine: float) -> None:
+        """Compression quality scales with bit width."""
         from transformers import DynamicCache
 
         cache = DynamicCache()
@@ -28,12 +32,7 @@ class TestBitWidthSupport:
 
         assert out_k.shape == keys.shape
         cos = cosine_similarity_flat(keys, out_k)
-        if bits == 2:
-            # 4 quantization levels — coarse, flattened cosine varies with data
-            assert cos > 0.75, f"2-bit cosine {cos:.4f} too low"
-        else:
-            # 32 levels — near-lossless per-vector but flattened cosine is noisier
-            assert cos > 0.90, f"5-bit cosine {cos:.4f} too low"
+        assert cos > min_cosine, f"{bits}-bit cosine {cos:.4f} below {min_cosine}"
 
     def test_5bit_better_quality_than_3bit(self) -> None:
         """5-bit (32 levels) should beat 3-bit (8 levels) in reconstruction."""

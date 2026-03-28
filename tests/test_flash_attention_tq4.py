@@ -34,13 +34,13 @@ def device():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.gpu
 class TestTQ4FlashAttention:
     """Phase 2 validation: fused TQ4 FA vs unfused (decompress + vanilla FA)."""
 
     def test_basic_mha(self, device: str, tq4_quantizer) -> None:
         """MHA (no GQA): fused TQ4 matches unfused path."""
         B, H, S, D = 1, 4, 32, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
@@ -68,7 +68,6 @@ class TestTQ4FlashAttention:
     def test_gqa_4_to_1(self, device: str, tq4_quantizer) -> None:
         """GQA 4:1 (Molmo2-4B config: 32Q/8KV)."""
         B, H_Q, H_KV, S, D = 1, 32, 8, 64, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)
@@ -93,7 +92,6 @@ class TestTQ4FlashAttention:
     def test_gqa_7_to_1(self, device: str, tq4_quantizer) -> None:
         """GQA 7:1 (Molmo2-8B config: 28Q/4KV)."""
         B, H_Q, H_KV, S, D = 1, 28, 4, 64, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)
@@ -119,7 +117,6 @@ class TestTQ4FlashAttention:
         """Decode: seq_q=1, long KV cache."""
         B, H_Q, H_KV, D = 1, 32, 8, 128
         S_Q, S_KV = 1, 512
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S_Q, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S_KV, D, device=device, dtype=torch.float16)
@@ -144,7 +141,6 @@ class TestTQ4FlashAttention:
     def test_causal(self, device: str, tq4_quantizer) -> None:
         """Causal masking with TQ4 compressed K."""
         B, H, S, D = 1, 4, 64, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
@@ -170,7 +166,6 @@ class TestTQ4FlashAttention:
     def test_bf16(self, device: str, tq4_quantizer) -> None:
         """bfloat16 inputs with TQ4 compressed K."""
         B, H, S, D = 1, 4, 32, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H, S, D, device=device, dtype=torch.bfloat16)
         k = torch.randn(B, H, S, D, device=device, dtype=torch.bfloat16)
@@ -195,7 +190,6 @@ class TestTQ4FlashAttention:
     def test_long_sequence_precision(self, device: str, tq4_quantizer) -> None:
         """Long sequence to validate multi-tile accumulation precision."""
         B, H_Q, H_KV, S, D = 1, 32, 8, 512, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)
@@ -220,7 +214,6 @@ class TestTQ4FlashAttention:
     def test_prime_seq_length(self, device: str, tq4_quantizer) -> None:
         """Non-power-of-2 sequence length (tests masking)."""
         B, H, S, D = 1, 4, 37, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H, S, D, device=device, dtype=torch.float16)
@@ -245,7 +238,6 @@ class TestTQ4FlashAttention:
     def test_batched(self, device: str, tq4_quantizer) -> None:
         """Multiple sequences in a batch."""
         B, H_Q, H_KV, S, D = 4, 32, 8, 64, 128
-        torch.manual_seed(42)
 
         q = torch.randn(B, H_Q, S, D, device=device, dtype=torch.float16)
         k = torch.randn(B, H_KV, S, D, device=device, dtype=torch.float16)
