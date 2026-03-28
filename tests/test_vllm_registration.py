@@ -1,4 +1,4 @@
-"""Tests for TQ4 vLLM backend registration, interface, and byte calculations.
+"""Tests for TQ4 vLLM backend registration and interface.
 
 Phase 3a tests: plugin wiring, registration, class hierarchy, interface compliance.
 Requires vLLM to be installed.
@@ -119,22 +119,3 @@ class TestTQ4AttentionImpl:
 
     def test_subclasses_flash_impl(self):
         assert issubclass(TQ4AttentionImpl, FlashAttentionImpl)
-
-
-class TestTQ4ByteCalculation:
-    """TQ4 page layout math."""
-
-    def test_bytes_per_token_head_128(self):
-        assert _tq4_bytes_per_token(128) == 68
-
-    def test_bytes_per_token_head_64(self):
-        assert _tq4_bytes_per_token(64) == 36
-
-    def test_bytes_per_token_head_256(self):
-        assert _tq4_bytes_per_token(256) == 132
-
-    def test_bytes_per_token_kv_128(self):
-        assert _tq4_bytes_per_token_kv(128) == 136
-
-    def test_bytes_per_token_kv_64(self):
-        assert _tq4_bytes_per_token_kv(64) == 72

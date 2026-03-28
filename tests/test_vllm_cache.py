@@ -1,7 +1,7 @@
-"""Tests for TQ4 cache spec and packed cache round-trip.
+"""Tests for TQ4 cache spec, byte calculations, and packed cache round-trip.
 
-Phase 3c tests: TQ4FullAttentionSpec, compress_and_store, decompress_cache round-trip.
-Requires vLLM to be installed.
+Phase 3c tests: TQ4FullAttentionSpec, byte layout math, compress_and_store,
+decompress_cache round-trip.  Requires vLLM to be installed.
 """
 
 from __future__ import annotations
@@ -17,8 +17,33 @@ from turboquant_vllm.vllm.tq4_backend import (  # noqa: E402  # isort: skip
     TQ4AttentionBackend,
     TQ4AttentionImpl,
     TQ4FullAttentionSpec,
+    _tq4_bytes_per_token,
     _tq4_bytes_per_token_kv,
 )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3c: TQ4 byte layout math
+# ---------------------------------------------------------------------------
+
+
+class TestTQ4ByteCalculation:
+    """TQ4 page layout math."""
+
+    def test_bytes_per_token_head_128(self):
+        assert _tq4_bytes_per_token(128) == 68
+
+    def test_bytes_per_token_head_64(self):
+        assert _tq4_bytes_per_token(64) == 36
+
+    def test_bytes_per_token_head_256(self):
+        assert _tq4_bytes_per_token(256) == 132
+
+    def test_bytes_per_token_kv_128(self):
+        assert _tq4_bytes_per_token_kv(128) == 136
+
+    def test_bytes_per_token_kv_64(self):
+        assert _tq4_bytes_per_token_kv(64) == 72
 
 
 # ---------------------------------------------------------------------------

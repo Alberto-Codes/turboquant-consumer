@@ -7,7 +7,7 @@ import torch
 
 from turboquant_vllm.kv_cache import CompressedDynamicCache
 
-from .conftest import BITS, BITS_4, DIM
+from .conftest import BITS, BITS_4, DIM, cosine_similarity_flat
 
 
 @pytest.mark.unit
@@ -27,9 +27,7 @@ class TestBitWidthSupport:
         out_k, out_v = cache.update(keys, values, layer_idx=0)
 
         assert out_k.shape == keys.shape
-        cos = torch.nn.functional.cosine_similarity(
-            keys.flatten(), out_k.flatten(), dim=0
-        )
+        cos = cosine_similarity_flat(keys, out_k)
         if bits == 2:
             # 4 quantization levels — coarse, flattened cosine varies with data
             assert cos > 0.75, f"2-bit cosine {cos:.4f} too low"
@@ -55,12 +53,8 @@ class TestBitWidthSupport:
             original.clone(), torch.randn(1, 4, 50, DIM), layer_idx=0
         )
 
-        cos3 = torch.nn.functional.cosine_similarity(
-            original.flatten(), out3.flatten(), dim=0
-        )
-        cos5 = torch.nn.functional.cosine_similarity(
-            original.flatten(), out5.flatten(), dim=0
-        )
+        cos3 = cosine_similarity_flat(original, out3)
+        cos5 = cosine_similarity_flat(original, out5)
         assert cos5 > cos3, f"5-bit ({cos5:.4f}) should beat 3-bit ({cos3:.4f})"
 
 
@@ -139,9 +133,7 @@ class TestNibblePacking:
         out3, _ = cache3.update(
             original.clone(), torch.randn(1, 4, 50, DIM).to(device), layer_idx=0
         )
-        cos3 = torch.nn.functional.cosine_similarity(
-            original.flatten(), out3.flatten(), dim=0
-        )
+        cos3 = cosine_similarity_flat(original, out3)
 
         # TQ4
         cache4 = DynamicCache()
@@ -149,9 +141,7 @@ class TestNibblePacking:
         out4, _ = cache4.update(
             original.clone(), torch.randn(1, 4, 50, DIM).to(device), layer_idx=0
         )
-        cos4 = torch.nn.functional.cosine_similarity(
-            original.flatten(), out4.flatten(), dim=0
-        )
+        cos4 = cosine_similarity_flat(original, out4)
 
         assert cos4 > cos3, f"TQ4 ({cos4:.4f}) should beat TQ3 ({cos3:.4f})"
 

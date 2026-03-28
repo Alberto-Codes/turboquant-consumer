@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 from turboquant_vllm.kv_cache import CompressedDynamicCache, TurboQuantKVCache
 
-from .conftest import BITS, DIM
+from .conftest import BITS, DIM, SEED
 
 
 @pytest.mark.unit
@@ -73,10 +73,10 @@ class TestLongSequenceRegression:
         nearly identical. A cosine similarity below 0.999 per layer
         would indicate a precision regression.
         """
-        torch.manual_seed(42)
+        torch.manual_seed(SEED)
         keys_accuracy = self._run_prefill_and_generate(TurboQuantKVCache)
 
-        torch.manual_seed(42)
+        torch.manual_seed(SEED)
         keys_compressed = self._run_prefill_and_generate(CompressedDynamicCache)
 
         assert len(keys_accuracy) == self.NUM_LAYERS
@@ -97,7 +97,7 @@ class TestLongSequenceRegression:
 
     def test_no_nan_or_inf_at_scale(self) -> None:
         """No NaN or Inf should appear after many layers and tokens."""
-        torch.manual_seed(42)
+        torch.manual_seed(SEED)
         keys = self._run_prefill_and_generate(CompressedDynamicCache)
 
         for layer_idx, k in enumerate(keys):
@@ -156,10 +156,10 @@ class TestLongSequenceRegression:
 
     def test_4bit_nibble_at_scale(self) -> None:
         """TQ4 nibble-packed should work at 36 layers with 1024 tokens."""
-        torch.manual_seed(42)
+        torch.manual_seed(SEED)
         keys_accuracy = self._run_prefill_and_generate(TurboQuantKVCache, bits=4)
 
-        torch.manual_seed(42)
+        torch.manual_seed(SEED)
         keys_compressed = self._run_prefill_and_generate(CompressedDynamicCache, bits=4)
 
         for layer_idx in range(self.NUM_LAYERS):
