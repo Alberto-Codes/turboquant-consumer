@@ -173,6 +173,7 @@ addopts = ["-ra", "--strict-markers", "--strict-config", "--showlocals"]
 source = ["turboquant_vllm"]
 omit = [
     "src/turboquant_vllm/benchmark.py",
+    "src/turboquant_vllm/verify.py",
     "src/turboquant_vllm/triton/*",
     "src/turboquant_vllm/vllm/*",
 ]
