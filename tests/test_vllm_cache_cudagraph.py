@@ -18,6 +18,7 @@ from turboquant_vllm.vllm.tq4_backend import (  # noqa: E402  # isort: skip
 )
 
 from tests.helpers.vllm_impl import (  # noqa: E402
+    BLOCK_SIZE,
     HEAD_SIZE,
     NUM_HEADS,
     NUM_KV_HEADS,
@@ -51,7 +52,7 @@ class TestCUDAGraphBufferPreallocation:
         impl._init_cg_buffers(kv_cache, compute_dtype=torch.float16)
         assert impl._cg_buffers_ready
 
-        max_tokens = 4 * 16  # blocks * BLOCK_SIZE
+        max_tokens = 4 * BLOCK_SIZE
         H = NUM_KV_HEADS
         D = HEAD_SIZE
 

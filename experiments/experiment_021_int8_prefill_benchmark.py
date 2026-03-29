@@ -424,60 +424,61 @@ def _profile_prefill_autotune(
 
     print("\n[Autotune Profiling] INT8 prefill kernel — 12 configs")
 
-    for pf_len in prefill_lens:
-        kv_cache, block_table, seq_lens = _build_paged_cache(
-            pf_len, boundaries, rot_t_even, rot_t_odd
-        )
-        torch.manual_seed(SEED + 1)
-        q = torch.randn(pf_len, H_Q, HEAD_DIM, dtype=torch.float16, device="cuda")
-        pf_key = str(pf_len)
-        results[pf_key] = {}
-        print(f"\n  Prefill length: {pf_len}")
-
-        for cfg_dict in _PREFILL_PROFILE_CONFIGS:
-            cfg = triton.Config(
-                {"BLOCK_N": cfg_dict["BLOCK_N"]},
-                num_stages=cfg_dict["num_stages"],
-                num_warps=cfg_dict["num_warps"],
+    try:
+        for pf_len in prefill_lens:
+            kv_cache, block_table, seq_lens = _build_paged_cache(
+                pf_len, boundaries, rot_t_even, rot_t_odd
             )
-            autotuner.configs = [cfg]
-            autotuner.cache.clear()
+            torch.manual_seed(SEED + 1)
+            q = torch.randn(pf_len, H_Q, HEAD_DIM, dtype=torch.float16, device="cuda")
+            pf_key = str(pf_len)
+            results[pf_key] = {}
+            print(f"\n  Prefill length: {pf_len}")
 
-            cfg_label = (
-                f"BN={cfg_dict['BLOCK_N']}_s={cfg_dict['num_stages']}"
-                f"_w={cfg_dict['num_warps']}"
-            )
-
-            with torch.inference_mode():
-                stats = _benchmark_fn(
-                    lambda _kv=kv_cache, _bt=block_table, _sl=seq_lens: (
-                        fused_paged_tq4_int8_prefill(
-                            q,
-                            _kv,
-                            _bt,
-                            _sl,
-                            centroids,
-                            rotation,
-                            num_kv_heads=H_KV,
-                            head_dim=HEAD_DIM,
-                            block_size=BLOCK_SIZE,
-                            sm_scale=sm_scale,
-                        )
-                    ),
-                    warmup,
-                    timed,
+            for cfg_dict in _PREFILL_PROFILE_CONFIGS:
+                cfg = triton.Config(
+                    {"BLOCK_N": cfg_dict["BLOCK_N"]},
+                    num_stages=cfg_dict["num_stages"],
+                    num_warps=cfg_dict["num_warps"],
                 )
-            results[pf_key][cfg_label] = stats["p50_us"]
-            print(f"    {cfg_label}: {stats['p50_us']:.0f}μs")
+                autotuner.configs = [cfg]
+                autotuner.cache.clear()
 
-        winner = min(results[pf_key], key=results[pf_key].get)
-        print(f"    → Winner: {winner} ({results[pf_key][winner]:.0f}μs)")
+                cfg_label = (
+                    f"BN={cfg_dict['BLOCK_N']}_s={cfg_dict['num_stages']}"
+                    f"_w={cfg_dict['num_warps']}"
+                )
 
-        del kv_cache, block_table, seq_lens
-        torch.cuda.empty_cache()
+                with torch.inference_mode():
+                    stats = _benchmark_fn(
+                        lambda _kv=kv_cache, _bt=block_table, _sl=seq_lens: (
+                            fused_paged_tq4_int8_prefill(
+                                q,
+                                _kv,
+                                _bt,
+                                _sl,
+                                centroids,
+                                rotation,
+                                num_kv_heads=H_KV,
+                                head_dim=HEAD_DIM,
+                                block_size=BLOCK_SIZE,
+                                sm_scale=sm_scale,
+                            )
+                        ),
+                        warmup,
+                        timed,
+                    )
+                results[pf_key][cfg_label] = stats["p50_us"]
+                print(f"    {cfg_label}: {stats['p50_us']:.0f}μs")
 
-    autotuner.configs = original_configs
-    autotuner.cache.clear()
+            winner = min(results[pf_key], key=results[pf_key].get)
+            print(f"    → Winner: {winner} ({results[pf_key][winner]:.0f}μs)")
+
+            del kv_cache, block_table, seq_lens
+            torch.cuda.empty_cache()
+    finally:
+        autotuner.configs = original_configs
+        autotuner.cache.clear()
 
     winners = {pf: min(cfgs, key=cfgs.get) for pf, cfgs in results.items()}
     unique_winners = set(winners.values())
@@ -552,25 +553,26 @@ def _benchmark_e2e(
             t_end = time.perf_counter()
             wall_s = t_end - t_start
             out_tokens = len(outputs[0].outputs[0].token_ids)
-            prefill_tput = actual_len / wall_s if wall_s > 0 else 0
+            # Wall time includes prefill + decode (8 tokens); metric is e2e throughput
+            e2e_prefill_tput = actual_len / wall_s if wall_s > 0 else 0
             trial_data.append(
                 {
                     "trial": trial + 1,
                     "wall_s": round(wall_s, 4),
                     "output_tokens": out_tokens,
-                    "prefill_throughput_tok_s": round(prefill_tput, 0),
+                    "e2e_prefill_throughput_tok_s": round(e2e_prefill_tput, 0),
                 }
             )
 
         median_tput = statistics.median(
-            [t["prefill_throughput_tok_s"] for t in trial_data]
+            [t["e2e_prefill_throughput_tok_s"] for t in trial_data]
         )
-        print(f"    Throughput: {median_tput:,.0f} tok/s")
+        print(f"    e2e throughput: {median_tput:,.0f} tok/s")
         results.append(
             {
                 "prefill_length": actual_len,
                 "target_prefill_length": pf_len,
-                "median_throughput_tok_s": round(median_tput, 0),
+                "median_e2e_throughput_tok_s": round(median_tput, 0),
                 "trials": trial_data,
             }
         )
@@ -620,9 +622,13 @@ def _generate_markdown(experiment: dict) -> str:
         "",
     ]
     cg = experiment.get("correctness_gate", {})
+    min_cos = cg.get("min_cosine")
+    gate_label = (
+        "**PASS**" if min_cos is not None and min_cos >= 0.998 else "**UNKNOWN**"
+    )
     lines.append(
         f"Mean cosine: {cg.get('mean_cosine', 'N/A')}, "
-        f"min cosine: {cg.get('min_cosine', 'N/A')} — **PASS**"
+        f"min cosine: {min_cos if min_cos is not None else 'N/A'} — {gate_label}"
     )
     lines.extend(
         [
@@ -654,37 +660,43 @@ def _generate_markdown(experiment: dict) -> str:
         lines.extend(
             [
                 "",
-                "## End-to-End Throughput (path c, both gates enabled)",
+                "## End-to-End Throughput (path c, both gates enabled, includes decode)",
                 "",
-                "| Prefill | Throughput (tok/s) |",
+                "| Prefill | e2e Throughput (tok/s) |",
                 "|--------:|-------------------:|",
             ]
         )
         for r in e2e:
             lines.append(
-                f"| {r['prefill_length']:,} | {r['median_throughput_tok_s']:,.0f} |"
+                f"| {r['prefill_length']:,} | {r['median_e2e_throughput_tok_s']:,.0f} |"
             )
 
-    # INT8 prefill gate recommendation
-    max_speedup = max((r["speedup"] for r in kr), default=0)
-    if max_speedup >= 1.3:
+    # INT8 prefill gate recommendation — use min/median, not max
+    speedups = [r["speedup"] for r in kr]
+    min_speedup = min(speedups) if speedups else 0
+    median_speedup = statistics.median(speedups) if speedups else 0
+    max_speedup = max(speedups) if speedups else 0
+    if min_speedup >= 1.0 and median_speedup >= 1.05:
         rec = "enable-by-default"
         rec_detail = (
-            f"INT8 prefill shows {max_speedup:.2f}x peak speedup, exceeding the "
-            "1.3x threshold. Recommend enabling TQ4_USE_INT8_PREFILL by default."
+            f"INT8 prefill shows {median_speedup:.2f}x median speedup (min "
+            f"{min_speedup:.2f}x, max {max_speedup:.2f}x) — all lengths at or above "
+            "parity. Recommend enabling TQ4_USE_INT8_PREFILL by default."
         )
-    elif max_speedup >= 1.05:
+    elif median_speedup >= 1.0:
         rec = "disable-by-default"
         rec_detail = (
-            f"INT8 prefill shows {max_speedup:.2f}x peak speedup — measurable but "
-            "modest. Keep TQ4_USE_INT8_PREFILL disabled by default; users can opt in."
+            f"INT8 prefill shows {median_speedup:.2f}x median speedup (min "
+            f"{min_speedup:.2f}x, max {max_speedup:.2f}x) — marginal overall. "
+            "Keep TQ4_USE_INT8_PREFILL disabled by default; users can opt in."
         )
     else:
         rec = "disable-by-default"
         rec_detail = (
-            f"INT8 prefill shows only {max_speedup:.2f}x peak speedup (<1.05x). "
-            "Per-tile INT8 quantization overhead negates IMMA throughput advantage. "
-            "Keep gate disabled by default. Revisit after per-row quantization."
+            f"INT8 prefill shows {median_speedup:.2f}x median speedup (min "
+            f"{min_speedup:.2f}x, max {max_speedup:.2f}x). "
+            "Per-tile INT8 quantization overhead negates IMMA throughput advantage "
+            "at longer sequences. Keep gate disabled. Revisit after per-row quantization."
         )
 
     lines.extend(

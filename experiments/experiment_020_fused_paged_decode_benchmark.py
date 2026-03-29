@@ -413,62 +413,62 @@ def _profile_decode_autotune(
 
     print("\n[Autotune Profiling] Decode kernel — 12 configs")
 
-    for ctx_len in context_lens:
-        kv_cache, block_table, seq_lens = _build_paged_cache(
-            ctx_len, boundaries, rot_t_even, rot_t_odd
-        )
-        torch.manual_seed(SEED + 1)
-        q = torch.randn(1, H_Q, HEAD_DIM, dtype=torch.float16, device="cuda")
-        ctx_key = str(ctx_len)
-        results[ctx_key] = {}
-        print(f"\n  Context: {ctx_len}")
-
-        for cfg_dict in _DECODE_PROFILE_CONFIGS:
-            cfg = triton.Config(
-                {"BLOCK_N": cfg_dict["BLOCK_N"]},
-                num_stages=cfg_dict["num_stages"],
-                num_warps=cfg_dict["num_warps"],
+    try:
+        for ctx_len in context_lens:
+            kv_cache, block_table, seq_lens = _build_paged_cache(
+                ctx_len, boundaries, rot_t_even, rot_t_odd
             )
-            autotuner.configs = [cfg]
-            autotuner.cache.clear()
+            torch.manual_seed(SEED + 1)
+            q = torch.randn(1, H_Q, HEAD_DIM, dtype=torch.float16, device="cuda")
+            ctx_key = str(ctx_len)
+            results[ctx_key] = {}
+            print(f"\n  Context: {ctx_len}")
 
-            cfg_label = (
-                f"BN={cfg_dict['BLOCK_N']}_s={cfg_dict['num_stages']}"
-                f"_w={cfg_dict['num_warps']}"
-            )
-
-            with torch.inference_mode():
-                stats = _benchmark_fn(
-                    lambda _kv=kv_cache, _bt=block_table, _sl=seq_lens: (
-                        fused_paged_tq4_decode(
-                            q,
-                            _kv,
-                            _bt,
-                            _sl,
-                            centroids,
-                            rotation,
-                            num_kv_heads=H_KV,
-                            head_dim=HEAD_DIM,
-                            block_size=BLOCK_SIZE,
-                            sm_scale=sm_scale,
-                        )
-                    ),
-                    warmup,
-                    timed,
+            for cfg_dict in _DECODE_PROFILE_CONFIGS:
+                cfg = triton.Config(
+                    {"BLOCK_N": cfg_dict["BLOCK_N"]},
+                    num_stages=cfg_dict["num_stages"],
+                    num_warps=cfg_dict["num_warps"],
                 )
-            results[ctx_key][cfg_label] = stats["p50_us"]
-            print(f"    {cfg_label}: {stats['p50_us']:.0f}μs")
+                autotuner.configs = [cfg]
+                autotuner.cache.clear()
 
-        # Report winner for this context length
-        winner = min(results[ctx_key], key=results[ctx_key].get)
-        print(f"    → Winner: {winner} ({results[ctx_key][winner]:.0f}μs)")
+                cfg_label = (
+                    f"BN={cfg_dict['BLOCK_N']}_s={cfg_dict['num_stages']}"
+                    f"_w={cfg_dict['num_warps']}"
+                )
 
-        del kv_cache, block_table, seq_lens
-        torch.cuda.empty_cache()
+                with torch.inference_mode():
+                    stats = _benchmark_fn(
+                        lambda _kv=kv_cache, _bt=block_table, _sl=seq_lens: (
+                            fused_paged_tq4_decode(
+                                q,
+                                _kv,
+                                _bt,
+                                _sl,
+                                centroids,
+                                rotation,
+                                num_kv_heads=H_KV,
+                                head_dim=HEAD_DIM,
+                                block_size=BLOCK_SIZE,
+                                sm_scale=sm_scale,
+                            )
+                        ),
+                        warmup,
+                        timed,
+                    )
+                results[ctx_key][cfg_label] = stats["p50_us"]
+                print(f"    {cfg_label}: {stats['p50_us']:.0f}μs")
 
-    # Restore original configs
-    autotuner.configs = original_configs
-    autotuner.cache.clear()
+            # Report winner for this context length
+            winner = min(results[ctx_key], key=results[ctx_key].get)
+            print(f"    → Winner: {winner} ({results[ctx_key][winner]:.0f}μs)")
+
+            del kv_cache, block_table, seq_lens
+            torch.cuda.empty_cache()
+    finally:
+        autotuner.configs = original_configs
+        autotuner.cache.clear()
 
     # Analyze consistency
     winners = {ctx: min(cfgs, key=cfgs.get) for ctx, cfgs in results.items()}
@@ -547,24 +547,25 @@ def _benchmark_e2e(
             t_end = time.perf_counter()
             wall_s = t_end - t_start
             out_tokens = len(outputs[0].outputs[0].token_ids)
-            tpot_ms = wall_s / out_tokens * 1000 if out_tokens > 0 else 0
+            # Wall time includes prefill + decode; metric is e2e average per token
+            e2e_tpot_ms = wall_s / out_tokens * 1000 if out_tokens > 0 else 0
             trial_data.append(
                 {
                     "trial": trial + 1,
                     "wall_s": round(wall_s, 4),
                     "output_tokens": out_tokens,
-                    "tpot_ms": round(tpot_ms, 3),
+                    "e2e_tpot_ms": round(e2e_tpot_ms, 3),
                 }
             )
 
-        median_tpot = statistics.median([t["tpot_ms"] for t in trial_data])
-        print(f"    TPOT: {median_tpot:.2f}ms ({max_new_tokens} tokens/trial)")
+        median_tpot = statistics.median([t["e2e_tpot_ms"] for t in trial_data])
+        print(f"    e2e TPOT: {median_tpot:.2f}ms ({max_new_tokens} tokens/trial)")
         results.append(
             {
                 "context_length": actual_len,
                 "target_context_length": ctx_len,
                 "max_new_tokens": max_new_tokens,
-                "median_tpot_ms": round(median_tpot, 3),
+                "median_e2e_tpot_ms": round(median_tpot, 3),
                 "trials": trial_data,
             }
         )
@@ -617,9 +618,13 @@ def _generate_markdown(experiment: dict) -> str:
         "",
     ]
     cg = experiment.get("correctness_gate", {})
+    min_cos = cg.get("min_cosine")
+    gate_label = (
+        "**PASS**" if min_cos is not None and min_cos >= 0.999 else "**UNKNOWN**"
+    )
     lines.append(
         f"Mean cosine: {cg.get('mean_cosine', 'N/A')}, "
-        f"min cosine: {cg.get('min_cosine', 'N/A')} — **PASS**"
+        f"min cosine: {min_cos if min_cos is not None else 'N/A'} — {gate_label}"
     )
     lines.extend(
         [
@@ -646,14 +651,14 @@ def _generate_markdown(experiment: dict) -> str:
         lines.extend(
             [
                 "",
-                "## End-to-End TPOT (path c, TQ4_USE_FUSED_PAGED=1)",
+                "## End-to-End TPOT (path c, TQ4_USE_FUSED_PAGED=1, includes prefill)",
                 "",
-                "| Context | TPOT (ms) |",
+                "| Context | e2e TPOT (ms) |",
                 "|--------:|----------:|",
             ]
         )
         for r in e2e:
-            lines.append(f"| {r['context_length']:,} | {r['median_tpot_ms']:.2f} |")
+            lines.append(f"| {r['context_length']:,} | {r['median_e2e_tpot_ms']:.2f} |")
 
     # VRAM savings analysis (static calculation)
     # Without fused: decompress buffers = max_cache_tokens × H_KV × D × 2B × 2
