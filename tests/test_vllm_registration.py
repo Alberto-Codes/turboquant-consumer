@@ -6,6 +6,8 @@ Requires vLLM to be installed.
 
 from __future__ import annotations
 
+from collections.abc import Generator
+
 import pytest
 
 vllm = pytest.importorskip("vllm", reason="vLLM not installed")
@@ -33,7 +35,7 @@ class TestTQ4Registration:
     """Backend registration and discovery."""
 
     @pytest.fixture(autouse=True)
-    def _restore_tq4_registration(self):
+    def _restore_tq4_registration(self) -> Generator[None, None, None]:
         """Save and restore all globals mutated by register_tq4_backend()."""
         from vllm.model_executor.layers.attention.attention import Attention
         from vllm.v1.attention.backends.registry import register_backend
@@ -64,12 +66,12 @@ class TestTQ4Registration:
                 f"{orig_custom_cls.__module__}.{orig_custom_cls.__qualname__}",
             )
 
-    def test_register_overrides_custom_enum(self):
+    def test_register_overrides_custom_enum(self) -> None:
         register_tq4_backend()
         cls = AttentionBackendEnum.CUSTOM.get_class()
         assert cls is TQ4AttentionBackend
 
-    def test_register_is_idempotent(self):
+    def test_register_is_idempotent(self) -> None:
         register_tq4_backend()
         register_tq4_backend()
         cls = AttentionBackendEnum.CUSTOM.get_class()
@@ -79,22 +81,22 @@ class TestTQ4Registration:
 class TestTQ4AttentionBackend:
     """Backend class interface compliance."""
 
-    def test_name_matches_enum(self):
+    def test_name_matches_enum(self) -> None:
         assert TQ4AttentionBackend.get_name() == "CUSTOM"
 
-    def test_impl_cls(self):
+    def test_impl_cls(self) -> None:
         assert TQ4AttentionBackend.get_impl_cls() is TQ4AttentionImpl
 
-    def test_builder_cls(self):
+    def test_builder_cls(self) -> None:
         assert TQ4AttentionBackend.get_builder_cls() is FlashAttentionMetadataBuilder
 
-    def test_subclasses_flash_attention(self):
+    def test_subclasses_flash_attention(self) -> None:
         assert issubclass(TQ4AttentionBackend, FlashAttentionBackend)
 
-    def test_forward_includes_kv_cache_update(self):
+    def test_forward_includes_kv_cache_update(self) -> None:
         assert TQ4AttentionBackend.forward_includes_kv_cache_update is True
 
-    def test_compression_ratio_math(self):
+    def test_compression_ratio_math(self) -> None:
         """TQ4 byte layout gives 3.76x compression vs FP16."""
         num_kv_heads, head_size = 8, 128
         tq4_bytes = 2 * num_kv_heads * _tq4_bytes_per_token(head_size)
@@ -102,14 +104,14 @@ class TestTQ4AttentionBackend:
         ratio = fp16_bytes / tq4_bytes
         assert abs(ratio - 3.76) < 0.01
 
-    def test_supported_dtypes(self):
+    def test_supported_dtypes(self) -> None:
         assert torch.float16 in TQ4AttentionBackend.supported_dtypes
         assert torch.bfloat16 in TQ4AttentionBackend.supported_dtypes
 
-    def test_supports_mm_prefix(self):
+    def test_supports_mm_prefix(self) -> None:
         assert TQ4AttentionBackend.supports_mm_prefix() is True
 
-    def test_packed_kv_cache_shape(self):
+    def test_packed_kv_cache_shape(self) -> None:
         """Phase 3c: packed uint8 layout (NB, BS, total_bytes)."""
         shape = TQ4AttentionBackend.get_kv_cache_shape(
             num_blocks=100,
@@ -121,7 +123,7 @@ class TestTQ4AttentionBackend:
         assert shape == (100, 16, expected_bytes)
         assert expected_bytes == 1088
 
-    def test_packed_shape_not_5d(self):
+    def test_packed_shape_not_5d(self) -> None:
         """Phase 3c shape is 3D, not the standard 5D."""
         shape = TQ4AttentionBackend.get_kv_cache_shape(
             num_blocks=50,
@@ -131,7 +133,7 @@ class TestTQ4AttentionBackend:
         )
         assert len(shape) == 3
 
-    def test_packed_shape_varies_with_heads(self):
+    def test_packed_shape_varies_with_heads(self) -> None:
         """More KV heads = more bytes per token."""
         shape_4h = TQ4AttentionBackend.get_kv_cache_shape(
             num_blocks=10,
@@ -151,5 +153,5 @@ class TestTQ4AttentionBackend:
 class TestTQ4AttentionImpl:
     """Impl class hierarchy."""
 
-    def test_subclasses_flash_impl(self):
+    def test_subclasses_flash_impl(self) -> None:
         assert issubclass(TQ4AttentionImpl, FlashAttentionImpl)

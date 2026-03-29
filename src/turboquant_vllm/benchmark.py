@@ -1,8 +1,11 @@
-r"""Benchmark harness for TurboQuant KV cache compression on Molmo2.
+r"""Benchmark harness for TurboQuant KV cache compression on supported models.
 
-Loads Molmo2 via HuggingFace transformers and runs inference with:
+Loads a model via HuggingFace transformers and runs inference with:
 1. Baseline: standard DynamicCache (no compression)
 2. TurboQuant: accuracy-only or compressed mode
+
+Supports both VLMs (e.g., Molmo2) and text-only models (e.g., Llama,
+Mistral). Model type is detected automatically from the config.
 
 Two modes:
 
@@ -16,11 +19,12 @@ mode) KV cache compression statistics.
 
 Usage:
     ```bash
-    # Accuracy-only mode
+    # Text-only model
     python -m turboquant_vllm.benchmark \
-        --model allenai/Molmo2-4B --bits 3
+        --model mistralai/Mistral-7B-v0.1 --bits 4 \
+        --prompt "The capital of France is"
 
-    # Compressed mode (real VRAM savings)
+    # VLM with video
     python -m turboquant_vllm.benchmark \
         --model allenai/Molmo2-4B --bits 3 --compressed \
         --video /path/to/clip.mp4
@@ -38,6 +42,8 @@ See Also:
     :class:`turboquant_vllm.TurboQuantKVCache`: Accuracy-only cache wrapper.
     :class:`turboquant_vllm.CompressedDynamicCache`: Compressed cache with VRAM savings.
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -68,32 +74,56 @@ def _reset_vram_tracking() -> None:
 
 def load_model(
     model_id: str,
-) -> tuple[Any, Any]:
-    """Load a Molmo2 model and processor from HuggingFace.
+) -> tuple[Any, Any, bool]:
+    """Load a supported model and tokenizer/processor from HuggingFace.
+
+    Detects whether the model is a VLM (e.g., Molmo2) or text-only (e.g.,
+    Llama, Mistral) and loads the appropriate classes.
 
     Args:
         model_id: HuggingFace model identifier (e.g., 'allenai/Molmo2-8B').
 
     Returns:
-        Tuple of (model, processor) ready for inference.
+        Tuple of (model, processor, is_vlm) ready for inference.
     """
-    from transformers import AutoModelForImageTextToText, AutoProcessor
+    from transformers import AutoConfig
 
-    print(f"Loading processor from {model_id}...")
-    processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+    config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+    is_vlm = hasattr(config, "text_config")
 
-    print(f"Loading model from {model_id} (bfloat16)...")
-    _reset_vram_tracking()
-    model = AutoModelForImageTextToText.from_pretrained(
-        model_id,
-        torch_dtype=torch.bfloat16,
-        device_map="auto",
-        trust_remote_code=True,
-    )
+    if is_vlm:
+        from transformers import AutoModelForImageTextToText, AutoProcessor
+
+        print(f"Loading VLM processor from {model_id}...")
+        processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+
+        print(f"Loading VLM model from {model_id} (bfloat16)...")
+        _reset_vram_tracking()
+        model = AutoModelForImageTextToText.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            trust_remote_code=True,
+        )
+    else:
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        print(f"Loading tokenizer from {model_id}...")
+        processor = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+
+        print(f"Loading model from {model_id} (bfloat16)...")
+        _reset_vram_tracking()
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            trust_remote_code=True,
+        )
+
     model_vram = _get_vram_mb()
     print(f"Model loaded: {model_vram:.0f} MiB VRAM")
 
-    return model, processor
+    return model, processor, is_vlm
 
 
 def run_inference(
@@ -102,33 +132,37 @@ def run_inference(
     prompt: str,
     video_path: str | None = None,
     max_new_tokens: int = 256,
+    *,
+    is_vlm: bool = False,
 ) -> tuple[str, float, float]:
     """Run a single inference pass and measure performance.
 
     Args:
-        model: Loaded Molmo2 model.
-        processor: Loaded Molmo2 processor.
+        model: Loaded HuggingFace model (VLM or text-only).
+        processor: Loaded processor (AutoProcessor for VLMs, AutoTokenizer
+            for text-only models).
         prompt: Text prompt for the model.
-        video_path: Optional path to a video file.
+        video_path: Optional path to a video file (VLM only).
         max_new_tokens: Maximum tokens to generate.
+        is_vlm: Whether the model is a VLM (True) or text-only (False).
 
     Returns:
         Tuple of (output_text, vram_peak_mib, elapsed_seconds).
     """
-    # Build messages in chat format
-    content = [{"type": "text", "text": prompt}]
-    if video_path:
-        content.insert(0, {"type": "video", "video": video_path})
+    if is_vlm:
+        content = [{"type": "text", "text": prompt}]
+        if video_path:
+            content.insert(0, {"type": "video", "video": video_path})
+        messages = [{"role": "user", "content": content}]
+        inputs = processor.apply_chat_template(
+            messages,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt",
+        )
+    else:
+        inputs = processor(prompt, return_tensors="pt")
 
-    messages = [{"role": "user", "content": content}]
-
-    # Tokenize
-    inputs = processor.apply_chat_template(
-        messages,
-        tokenize=True,
-        return_dict=True,
-        return_tensors="pt",
-    )
     inputs = {
         k: v.to(model.device) if hasattr(v, "to") else v for k, v in inputs.items()
     }
@@ -167,6 +201,10 @@ def run_inference(
 def _detect_model_config(model: Any) -> dict[str, int]:
     """Extract KV cache parameters from a model's config.
 
+    Handles both VLMs (nested ``text_config``) and text-only models
+    (params on root config). Falls back to ``hidden_size // num_heads``
+    when ``head_dim`` is absent or ``None``.
+
     Args:
         model: A loaded HuggingFace model.
 
@@ -178,7 +216,7 @@ def _detect_model_config(model: Any) -> dict[str, int]:
     text_config = getattr(config, "text_config", config)
     hidden_size = text_config.hidden_size
     num_heads = text_config.num_attention_heads
-    head_dim = getattr(text_config, "head_dim", hidden_size // num_heads)
+    head_dim = getattr(text_config, "head_dim", None) or hidden_size // num_heads
     num_kv_heads = getattr(text_config, "num_key_value_heads", num_heads)
     num_layers = text_config.num_hidden_layers
     return {
@@ -236,10 +274,14 @@ def run_benchmark(
 ) -> dict:
     """Run baseline vs TurboQuant comparison benchmark.
 
+    Detects model type (VLM or text-only) and runs both baseline and
+    TurboQuant inference passes for comparison. Warns if ``video_path``
+    is provided for a text-only model.
+
     Args:
         model_id: HuggingFace model identifier.
         prompt: Text prompt for inference.
-        video_path: Optional path to a video file.
+        video_path: Optional path to a video file (VLM only).
         bits: TurboQuant bits per coordinate.
         max_new_tokens: Maximum tokens to generate.
         compressed: If True, benchmark CompressedDynamicCache (real VRAM
@@ -255,7 +297,9 @@ def run_benchmark(
         TurboQuantKVCache,
     )
 
-    model, processor = load_model(model_id)
+    model, processor, is_vlm = load_model(model_id)
+    if video_path and not is_vlm:
+        print("Warning: --video ignored for text-only models")
     model_cfg = _detect_model_config(model)
     head_dim = model_cfg["head_dim"]
 
@@ -277,7 +321,7 @@ def run_benchmark(
     # --- Baseline run (no compression) ---
     print("\n=== BASELINE (no compression) ===")
     baseline_text, baseline_vram, baseline_time = run_inference(
-        model, processor, prompt, video_path, max_new_tokens
+        model, processor, prompt, video_path, max_new_tokens, is_vlm=is_vlm
     )
     results["baseline"] = {
         "output_text": baseline_text,
@@ -294,7 +338,7 @@ def run_benchmark(
 
     try:
         tq_text, tq_vram, tq_time = run_inference(
-            model, processor, prompt, video_path, max_new_tokens
+            model, processor, prompt, video_path, max_new_tokens, is_vlm=is_vlm
         )
     finally:
         setattr(DynamicCache, "__init__", original_init)  # noqa: B010
@@ -344,9 +388,12 @@ def run_benchmark(
 
 
 def main() -> None:
-    """CLI entry point for the benchmark harness."""
+    """CLI entry point for the benchmark harness.
+
+    Supports VLMs (e.g., Molmo2) and text-only models (e.g., Llama, Mistral).
+    """
     parser = argparse.ArgumentParser(
-        description="Benchmark TurboQuant KV cache compression on Molmo2"
+        description="Benchmark TurboQuant KV cache compression on supported models"
     )
     parser.add_argument(
         "--model",

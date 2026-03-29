@@ -32,19 +32,19 @@ pytestmark = [pytest.mark.unit]
 class TestTQ4ByteCalculation:
     """TQ4 page layout math."""
 
-    def test_bytes_per_token_head_128(self):
+    def test_bytes_per_token_head_128(self) -> None:
         assert _tq4_bytes_per_token(128) == 68
 
-    def test_bytes_per_token_head_64(self):
+    def test_bytes_per_token_head_64(self) -> None:
         assert _tq4_bytes_per_token(64) == 36
 
-    def test_bytes_per_token_head_256(self):
+    def test_bytes_per_token_head_256(self) -> None:
         assert _tq4_bytes_per_token(256) == 132
 
-    def test_bytes_per_token_kv_128(self):
+    def test_bytes_per_token_kv_128(self) -> None:
         assert _tq4_bytes_per_token_kv(128) == 136
 
-    def test_bytes_per_token_kv_64(self):
+    def test_bytes_per_token_kv_64(self) -> None:
         assert _tq4_bytes_per_token_kv(64) == 72
 
 
@@ -56,10 +56,10 @@ class TestTQ4ByteCalculation:
 class TestTQ4FullAttentionSpec:
     """TQ4 cache spec page size override."""
 
-    def test_subclasses_full_attention_spec(self):
+    def test_subclasses_full_attention_spec(self) -> None:
         assert issubclass(TQ4FullAttentionSpec, FullAttentionSpec)
 
-    def test_page_size_bytes_molmo2_8b(self):
+    def test_page_size_bytes_molmo2_8b(self) -> None:
         """Molmo2-8B: 8 KV heads, head_dim=128, block_size=16."""
         spec = TQ4FullAttentionSpec(
             block_size=16,
@@ -70,7 +70,7 @@ class TestTQ4FullAttentionSpec:
         # 16 tokens * 8 heads * 136 bytes/token/head = 17,408
         assert spec.page_size_bytes == 17_408
 
-    def test_page_size_vs_fp16(self):
+    def test_page_size_vs_fp16(self) -> None:
         """TQ4 page is 3.76x smaller than FP16."""
         tq4_spec = TQ4FullAttentionSpec(
             block_size=16,
@@ -87,7 +87,7 @@ class TestTQ4FullAttentionSpec:
         ratio = fp16_spec.page_size_bytes / tq4_spec.page_size_bytes
         assert abs(ratio - 3.76) < 0.01
 
-    def test_dtype_is_uint8(self):
+    def test_dtype_is_uint8(self) -> None:
         spec = TQ4FullAttentionSpec(
             block_size=16,
             num_kv_heads=8,
@@ -96,7 +96,7 @@ class TestTQ4FullAttentionSpec:
         )
         assert spec.dtype == torch.uint8
 
-    def test_block_size_scales_page_size(self):
+    def test_block_size_scales_page_size(self) -> None:
         spec_16 = TQ4FullAttentionSpec(
             block_size=16,
             num_kv_heads=8,
@@ -111,7 +111,7 @@ class TestTQ4FullAttentionSpec:
         )
         assert spec_32.page_size_bytes == 2 * spec_16.page_size_bytes
 
-    def test_frozen_dataclass(self):
+    def test_frozen_dataclass(self) -> None:
         spec = TQ4FullAttentionSpec(
             block_size=16,
             num_kv_heads=8,
@@ -168,7 +168,7 @@ class TestTQ4PackedCacheRoundTrip:
         total_bytes = self.NUM_KV_HEADS * _tq4_bytes_per_token_kv(self.HEAD_SIZE)
         return torch.zeros(num_blocks, self.BLOCK_SIZE, total_bytes, dtype=torch.uint8)
 
-    def test_compress_store_decompress_single_token(self, tq4_quantizer):
+    def test_compress_store_decompress_single_token(self, tq4_quantizer) -> None:
         impl = self._make_impl(tq4_quantizer)
         kv_cache = self._make_cache(num_blocks=4)
 
@@ -204,7 +204,7 @@ class TestTQ4PackedCacheRoundTrip:
         assert reconstructed_k.any(), "Decompressed K should be non-zero"
         assert reconstructed_v.any(), "Decompressed V should be non-zero"
 
-    def test_round_trip_cosine_similarity(self, tq4_quantizer):
+    def test_round_trip_cosine_similarity(self, tq4_quantizer) -> None:
         """TQ4 round-trip should achieve >0.85 cosine on random data.
 
         Note: real model KV cache data achieves >0.97 cosine (validated
@@ -234,7 +234,7 @@ class TestTQ4PackedCacheRoundTrip:
             assert cos_k > 0.85, f"K head {h} cosine {cos_k:.4f} < 0.85"
             assert cos_v > 0.85, f"V head {h} cosine {cos_v:.4f} < 0.85"
 
-    def test_multi_token_scatter_write(self, tq4_quantizer):
+    def test_multi_token_scatter_write(self, tq4_quantizer) -> None:
         """Multiple tokens scattered to different slots."""
         impl = self._make_impl(tq4_quantizer)
         kv_cache = self._make_cache(num_blocks=4)
@@ -259,7 +259,7 @@ class TestTQ4PackedCacheRoundTrip:
                     f"Token {i} slot {slot} head {h}: K cos {cos_k:.4f}"
                 )
 
-    def test_empty_slots_decompress_to_zero(self, tq4_quantizer):
+    def test_empty_slots_decompress_to_zero(self, tq4_quantizer) -> None:
         """Unwritten slots should decompress to zero."""
         impl = self._make_impl(tq4_quantizer)
         kv_cache = self._make_cache(num_blocks=2)
@@ -276,7 +276,7 @@ class TestTQ4PackedCacheRoundTrip:
         assert flat_k[0].any(), "Slot 0 should have data"
         assert not flat_k[1].any(), "Slot 1 should be zeros"
 
-    def test_overwrite_slot(self, tq4_quantizer):
+    def test_overwrite_slot(self, tq4_quantizer) -> None:
         """Writing to the same slot twice should overwrite."""
         impl = self._make_impl(tq4_quantizer)
         kv_cache = self._make_cache(num_blocks=1)
@@ -300,7 +300,7 @@ class TestTQ4PackedCacheRoundTrip:
         )
         assert cos_k2 > cos_k1, "Overwrite should match key2, not key1"
 
-    def test_cache_shape_matches_backend(self, tq4_quantizer):
+    def test_cache_shape_matches_backend(self, tq4_quantizer) -> None:
         """Cache shape from backend matches what decompress expects."""
         shape = TQ4AttentionBackend.get_kv_cache_shape(
             num_blocks=10,
@@ -325,7 +325,7 @@ class TestTQ4PackedCacheRoundTrip:
             self.HEAD_SIZE,
         )
 
-    def test_bfloat16_output_dtype(self, tq4_quantizer):
+    def test_bfloat16_output_dtype(self, tq4_quantizer) -> None:
         """Decompress can produce bf16 output."""
         impl = self._make_impl(tq4_quantizer)
         kv_cache = self._make_cache(num_blocks=1)

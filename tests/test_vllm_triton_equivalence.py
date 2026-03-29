@@ -46,7 +46,7 @@ class TestTritonPyTorchEquivalence:
     rot_T_odd: torch.Tensor
 
     @pytest.fixture(autouse=True, scope="class")
-    def _setup(self, request, tq4_quantizer):
+    def _setup(self, request, tq4_quantizer) -> None:
         """Set up quantizer primitives for both paths (once per class)."""
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         request.cls.device = device
@@ -87,7 +87,7 @@ class TestTritonPyTorchEquivalence:
 
     # --- compress tests ---
 
-    def test_compress_packed_match(self):
+    def test_compress_packed_match(self) -> None:
         """Triton compress produces identical packed bytes as PyTorch."""
         from turboquant_vllm.triton.tq4_compress import tq4_compress
 
@@ -107,7 +107,7 @@ class TestTritonPyTorchEquivalence:
         )
         assert torch.equal(pt_packed, tr_packed), "Packed bytes differ"
 
-    def test_compress_norms_match(self):
+    def test_compress_norms_match(self) -> None:
         """Triton compress produces identical norms as PyTorch."""
         from turboquant_vllm.triton.tq4_compress import tq4_compress
 
@@ -127,7 +127,7 @@ class TestTritonPyTorchEquivalence:
         )
         torch.testing.assert_close(pt_norms, tr_norms, atol=1e-5, rtol=1e-5)
 
-    def test_compress_single_token(self):
+    def test_compress_single_token(self) -> None:
         """Triton compress matches PyTorch for a single token (decode case)."""
         from turboquant_vllm.triton.tq4_compress import tq4_compress
 
@@ -150,7 +150,7 @@ class TestTritonPyTorchEquivalence:
 
     # --- decompress tests ---
 
-    def test_decompress_with_rotation_matches_pytorch(self):
+    def test_decompress_with_rotation_matches_pytorch(self) -> None:
         """Triton decompress + rotation matches old PyTorch decompress."""
         from turboquant_vllm.triton.tq4_decompress import tq4_decompress
 
@@ -182,7 +182,7 @@ class TestTritonPyTorchEquivalence:
 
         torch.testing.assert_close(pt_out, tr_out, atol=1e-4, rtol=1e-4)
 
-    def test_decompress_no_rotation_stays_in_rotated_space(self):
+    def test_decompress_no_rotation_stays_in_rotated_space(self) -> None:
         """Triton decompress without rotation is NOT close to original data."""
         from turboquant_vllm.triton.tq4_decompress import tq4_decompress
 
@@ -208,7 +208,7 @@ class TestTritonPyTorchEquivalence:
     # --- end-to-end: pre/post-rotation equivalence ---
 
     @pytest.mark.gpu
-    def test_pre_post_rotation_attention_equivalence(self):
+    def test_pre_post_rotation_attention_equivalence(self) -> None:
         """Pre-rotate Q + Triton decompress + post-rotate == old path.
 
         This is the core 3c.10 validation: the full attention output must
@@ -285,7 +285,7 @@ class TestTritonPyTorchEquivalence:
 
     # --- round-trip: compress then decompress ---
 
-    def test_full_round_trip_triton_vs_pytorch(self):
+    def test_full_round_trip_triton_vs_pytorch(self) -> None:
         """Full round-trip: Triton compress then decompress matches PyTorch.
 
         Triton compress → Triton decompress + rotation should produce the
