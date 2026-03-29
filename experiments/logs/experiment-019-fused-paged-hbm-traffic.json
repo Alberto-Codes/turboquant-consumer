@@ -25,10 +25,10 @@
   },
   "fused_path": {
     "description": "Single fused kernel reads compressed blocks directly from page table, decompresses in SRAM",
-    "hbm_read_bytes_per_token": 136,
-    "hbm_write_bytes_per_token": 0,
-    "total_hbm_bytes_per_token": 136,
-    "breakdown": "136 = 2 * 68 (K compressed read + V compressed read per KV head)"
+    "hbm_read_bytes_per_token_per_kv_head_pair": 136,
+    "hbm_write_bytes_per_token_per_kv_head_pair": 0,
+    "total_hbm_bytes_per_token_per_kv_head_pair": 136,
+    "breakdown": "136 = 2 * 68 (K compressed read + V compressed read per KV head pair)"
   },
   "reference_path": {
     "description": "Decompress-all to HBM temp buffer, then Flash Attention reads decompressed cache",

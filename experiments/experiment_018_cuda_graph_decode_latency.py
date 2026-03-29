@@ -39,6 +39,7 @@ import argparse
 import gc
 import json
 import os
+import statistics
 import sys
 import time
 from datetime import datetime, timezone
@@ -238,24 +239,23 @@ def _benchmark_condition(
                 )
 
             # Median of trials
-            tpots = sorted(t["tpot_ms"] for t in trial_data)
-            thrpts = sorted(t["throughput_tok_s"] for t in trial_data)
-            mid = len(trial_data) // 2
+            tpots = [t["tpot_ms"] for t in trial_data]
+            thrpts = [t["throughput_tok_s"] for t in trial_data]
 
             entry = {
                 "batch_size": batch_size,
                 "context_length": actual_len,
                 "target_context_length": ctx_len,
                 "max_new_tokens": max_new_tokens,
-                "median_tpot_ms": tpots[mid],
-                "median_throughput_tok_s": thrpts[mid],
+                "median_tpot_ms": statistics.median(tpots),
+                "median_throughput_tok_s": statistics.median(thrpts),
                 "vram_peak_mib": trial_data[-1]["vram_peak_mib"],
                 "trials": trial_data,
             }
             condition_results.append(entry)
             print(
-                f" TPOT={tpots[mid]:.2f}ms  "
-                f"{thrpts[mid]:.0f} tok/s  "
+                f" TPOT={statistics.median(tpots):.2f}ms  "
+                f"{statistics.median(thrpts):.0f} tok/s  "
                 f"VRAM={entry['vram_peak_mib']:.0f}MiB"
             )
 

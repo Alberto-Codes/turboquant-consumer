@@ -11,7 +11,7 @@ The kernel operates entirely in **rotated space**.  The caller
 pre-rotates Q by ``Pi^T`` and post-rotates the output by ``Pi``.
 Decompression does NOT apply rotation (matching ``tq4_decompress.py``).
 
-Scope: FP16 Q decode path only (``USE_INT8_QK=False``).  INT8 path
+Scope: FP16/BF16 Q decode path only (``USE_INT8_QK=False``).  INT8 path
 is Story 6.4.  Placeholder parameters are included for forward
 compatibility but compiled out by the constexpr switch.
 

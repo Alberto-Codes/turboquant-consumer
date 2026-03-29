@@ -10,11 +10,11 @@ The fused paged TQ4 decode kernel reads compressed blocks directly from
 vLLM's page table and decompresses in SRAM, eliminating the HBM
 round-trip for decompressed FP16 data.
 
-## Per-Token HBM Traffic
+## Per-Token HBM Traffic (per KV head pair)
 
 | Path | Read (B) | Write (B) | Total (B) |
 |------|----------|-----------|-----------|
-| **Fused paged** | 136 | 0 | **136** |
+| **Fused paged** (per KV head pair) | 136 | 0 | **136** |
 | Reference (decompress-all) | 136 | 512 | 1,160* |
 
 *Reference total includes re-read of decompressed FP16 data by Flash Attention.
@@ -26,7 +26,7 @@ round-trip for decompressed FP16 data.
 ### Fused path (single kernel, no HBM temp buffer)
 - K compressed read: 4 heads * 68 bytes = 272 bytes (indices + norms)
 - V compressed read: 4 heads * 68 bytes = 272 bytes
-- Total per token: 544 bytes across all heads
+- Total per token (all 4 KV head pairs): 544 bytes
 - Per K or V per head: 68 bytes (64 nibble-packed + 4 fp32 norm)
 
 ### Reference path (three serial HBM operations)
