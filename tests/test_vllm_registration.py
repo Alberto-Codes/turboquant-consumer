@@ -88,7 +88,10 @@ class TestTQ4AttentionBackend:
         assert TQ4AttentionBackend.get_impl_cls() is TQ4AttentionImpl
 
     def test_builder_cls(self) -> None:
-        assert TQ4AttentionBackend.get_builder_cls() is FlashAttentionMetadataBuilder
+        from turboquant_vllm.vllm.tq4_backend import TQ4MetadataBuilder
+
+        assert TQ4AttentionBackend.get_builder_cls() is TQ4MetadataBuilder
+        assert issubclass(TQ4MetadataBuilder, FlashAttentionMetadataBuilder)
 
     def test_subclasses_flash_attention(self) -> None:
         assert issubclass(TQ4AttentionBackend, FlashAttentionBackend)
