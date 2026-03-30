@@ -1,0 +1,32 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 10:15:55",
+  "tag": "baseline-85f",
+  "model_id": "allenai/Molmo2-4B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "85",
+  "runs": [
+    {
+      "elapsed_s": 21.69,
+      "output_text": "This scene from the movie \"Cruel Intentions\" takes place in a crowded movie theater with red seating and scattered patrons in the dimly lit auditorium. across the seating, the red seats add a vivid pop of color against the dark background, and the atmosphere feels lively and animated as people watch the film with expressions that range from animated to wide-eyed attention. The scene cuts between two main viewing experiences while capturing the shared atmosphere.\n\nIn the first portion of the scene, a young boy with long brown hair wearing a bright yellow vest sits intently in his seat. Beside him is a woman with curly brown hair wearing a striking red jacket, who has her right hand resting on his shoulder. They're both fully absorbed in the movie, leaning in as if trying to hear a quiet conversation between characters. The boy wears an amused but slightly perturbed expression, his eyebrows slightly raised and his mouth pointing upward in a way that shows a mix of fascination and mild irritation. He keeps rocking gently in his seat as he reacts to what's on screen. The woman responds with animated intensity, her hand movements growing more emphatic. Her face tightens with excitement and confusion, sometimes closing her eyes as she speaks or emphasizes a point, and her posture shifts to lean forward into the moment. Around them, several individuals become visible in the background\u2014one woman with long brown hair wearing a brown shirt is looking to her left, while to her right sits a man wearing glasses with a black shirt and black vest. A white cup decorated with a green design rests on the middle-back pad of his seat. The casual arrangement of these viewers and the subtle animation of their positions enhance the theater setting's authenticity.\n\nLater in the scene, the perspective shifts while remaining in the same setting and seat, moving to focus on a boy and a girl seated together. The boy has short brown hair and wears a blue sweater. He and the girl sit closely next to each other, both holding blue buckets of popcorn as they watch the film. The boy looks directly at the camera with a concerned expression, appearing captivated by whatever dramatic moment is unfolding before them. His mouth is slightly open, showing his top teeth as he talks, and the girl turns her head to the left, looking intently at him, drawing attention to their close conversation. In the background, the theater remains busy with patrons remains scattered throughout, including the same man with glasses in a black shirt and vest visible at the upper right of the screen, alongside another woman with long brown hair. Around them, the",
+      "input_tokens": 6865,
+      "output_tokens": 512,
+      "characters": {},
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 6865,
+    "avg_output_tokens": 512,
+    "avg_elapsed_s": 21.69,
+    "total_characters": {},
+    "est_frames": 27
+  }
+}

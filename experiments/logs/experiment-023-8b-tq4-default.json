@@ -1,0 +1,40 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:21:55",
+  "tag": "8b-tq4-default",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "default",
+  "runs": [
+    {
+      "elapsed_s": 15.81,
+      "output_text": "In a noisy movie theater, Jerry Seinfeld sits beside Elaine Benes on a red couch, both casually dressed in dark sweaters as pop culture fits. Jerry is across from George Costanza, who is waiting for someone. Elaine looks toward George, who tries to hide behind his popcorn and talk to her but is too startled to make any sound. Elaine leans over to continue talking to George, who continues to remain silent, expressing confusion.\n\nThe scene shifts to Jerry seated next to a woman in a bright red coat who is animated and gesticulating. He watches her carefully, waiting to respond. The woman continues talking and has a striking visual contrast against the subdued lighting of the theater. Among the theatergoers visible behind her is a man wearing glasses, as well as a woman in a red jacket.\n\nThe setting remains consistently dim and crowded throughout, with rows of red seats filled by a diverse group of people. In the background, a young boy with short hair in a blue shirt can be seen. A man holding a cup that appears to contain soda sits in front, while another man beside him also has a drink.\n\nThe background then cuts to two people sharing a laugh: Jerry faces George. Jerry is now wearing a yellow puffy vest, still dressed in dark clothing, and George appears in a similar dark shirt. Both are laughing at something that has just occurred while the lively theater audience fills the rows behind them.\n\nThe video concludes by returning to the spot near the opening\u2014Jerry and Elaine are once again sharing their seats. Elaine holds a blue cup with a straw, and Jerry is positioned behind her. The atmosphere remains the same energetic film-watching environment, with visible popcorn and drinks throughout the background. The consistent red couch and the collage of playful interactions and talking characters frame the focus on Jerry, Elaine, and George against the bustling, dimly lit theater crowd.",
+      "input_tokens": 2609,
+      "output_tokens": 378,
+      "characters": {
+        "jerry": 8,
+        "george": 6,
+        "elaine": 6
+      },
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 2609,
+    "avg_output_tokens": 378,
+    "avg_elapsed_s": 15.81,
+    "total_characters": {
+      "jerry": 8,
+      "george": 6,
+      "elaine": 6
+    },
+    "est_frames": 31
+  }
+}

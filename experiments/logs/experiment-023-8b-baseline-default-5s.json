@@ -1,0 +1,38 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:35:00",
+  "tag": "8b-baseline-default-5s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 5,
+  "frames_label": "default",
+  "runs": [
+    {
+      "elapsed_s": 9.71,
+      "output_text": "This scene from Seinfeld takes place in a movie theater. Jerry Seinfeld and Elaine Benes are seated in the row in front, both wearing black. Jerry is across from Elaine, with a blue cup on his lap. They're engaged in a lively conversation, sharing an animated discussion and showing clear chemistry with each other.\n\nThe theater setting includes a brown wall visible in the background. One of the chairs in Jerry and Elaine's row appears to be red and brown. In the row behind them, there's a man wearing a black leather jacket, a business suit, and glasses with short brown hair. He's facing away from the camera. Next to him sits another man in a black suit jacket with short brown hair.\n\nJerry is eating popcorn during their conversation, which adds to the typical movie theater atmosphere. Elaine sits with her hands raised as she speaks passionately to Jerry, while he remains focused on their discussion, reaching for more popcorn. The scene captures a genuine moment of connection between these two characters in a casual movie theater setting.",
+      "input_tokens": 1798,
+      "output_tokens": 208,
+      "characters": {
+        "jerry": 5,
+        "elaine": 4
+      },
+      "run": 1,
+      "clip_size_mb": 3.1
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 1798,
+    "avg_output_tokens": 208,
+    "avg_elapsed_s": 9.71,
+    "total_characters": {
+      "jerry": 5,
+      "elaine": 4
+    },
+    "est_frames": 21
+  }
+}

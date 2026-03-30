@@ -1,0 +1,19 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:44:31",
+  "tag": "8b-tq4-default-60s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 60,
+  "frames_label": "default",
+  "runs": [
+    {
+      "run": 1,
+      "error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:8100/v1/chat/completions"
+    }
+  ]
+}

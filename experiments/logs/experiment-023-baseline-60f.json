@@ -1,0 +1,32 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 10:10:31",
+  "tag": "baseline-60f",
+  "model_id": "allenai/Molmo2-4B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "60",
+  "runs": [
+    {
+      "elapsed_s": 16.91,
+      "output_text": "This scene from the movie \"Willie and I\" unfolds in a crowded movie theater with red seats and dim lighting. The setting has a slightly blurry, cinematic quality across the seating area. In the foreground on the left sits a young man with short, curly brown hair wearing a blue sweater over a lighter blue shirt. He's holding a blue bucket of popcorn that has white lettering on it, occasionally reaching in with his left hand to take another piece and pause to munch on a kernel.\n\nNext to him along the aisle sits Kirsten Dunst. She has long, dark brown hair and is wearing a black top. Kirsten looks over at Tom Hanks' character with an intense, somewhat frustrated expression, as if she senses she may have correctly identified a party member surrounded by a gathering of people.\n\nThe theater around them appears fairly full. A woman in a red jacket sits nearby, talking animatedly to the man beside her. This man has long brown hair and wears a yellow puffer jacket. He brings a hand to his head and speaks while turning in his seat, engaged in conversation. The woman directing her comments toward him wears a red coat and has blonde or brown curly hair. Behind the yellow-jacketed man, a man with glasses stares intently into the distance, conveying a sense of concern or anticipation.\n\nThe crowd throughout the background shows varied activity: some seats remain vacant, while others are occupied by viewers who face the screen with gasps, murmurs, and wide eyes. A woman in a white shirt is visible on the left, and behind Tom Hanks' character, a man in a green jacket can be seen. On the right side, another man in a dark blue jacket is visible in the background.\n\nAcross the theater, the overall mood is dense with anticipation and intrigue as people absorb whatever is being shown on the big screen. The red chairs and the dim lighting and quality contribute to the cinematic atmosphere typical of a movie screening in an older film setting.",
+      "input_tokens": 4826,
+      "output_tokens": 401,
+      "characters": {},
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 4826,
+    "avg_output_tokens": 401,
+    "avg_elapsed_s": 16.91,
+    "total_characters": {},
+    "est_frames": 19
+  }
+}

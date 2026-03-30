@@ -1,0 +1,32 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 10:07:06",
+  "tag": "baseline-32f",
+  "model_id": "allenai/Molmo2-4B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "32",
+  "runs": [
+    {
+      "elapsed_s": 9.23,
+      "output_text": "This scene from the movie \"Cruel Intentions\" takes place in a crowded movie theater with red seating and dark surroundings. A couple appears in the frame \u2013 across from them, a woman with long brown hair wearing what looks like a maroon jacket and a man with long brown hair and a yellow puffy vest watch intently.\n\nThe main couple in focus includes a woman with long brown hair in a black jacket, holding a blue bucket with white and yellow designs and laughing heartily at a joke. She has one hand raised near her chest in a surprised gesture. Beside her is a man with short brown hair wearing a blue sweater, his mouth slightly open as if reacting to what just happened.\n\nThe seating area is quite full. Behind the laughing couple, several people have red cups resting on their laps; at least one person is drinking from a red cup. The whole scene has a vibrant, lively atmosphere despite the dim theater lighting.",
+      "input_tokens": 2609,
+      "output_tokens": 191,
+      "characters": {},
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 2609,
+    "avg_output_tokens": 191,
+    "avg_elapsed_s": 9.23,
+    "total_characters": {},
+    "est_frames": 10
+  }
+}

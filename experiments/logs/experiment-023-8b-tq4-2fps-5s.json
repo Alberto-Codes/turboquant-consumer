@@ -1,0 +1,32 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:42:07",
+  "tag": "8b-tq4-2fps-5s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 5,
+  "frames_label": "2fps",
+  "runs": [
+    {
+      "elapsed_s": 10.51,
+      "output_text": "This scene from the iconic 1990s TV show Friends takes place in a movie theater. The main characters visible in the frame are Monica (Courteney Cox), who is studying a chart on her phone, and Chandler (Matthew Perry), who is sitting beside her in a theater seat. The two are engaged in an earnest conversation about a movie they are watching together.\n\nIn the foreground, there's a blue United Artists popcorn bucket with white lettering. Someone is eating from it with a blue plastic spoon, lifting and chewing popcorn while focusing on the screen. A woman wearing a blue knit top is seen rubbing her finger, adding a casual, lived-in detail to the scene.\n\nOn the opposite side of the frame, a man in a red shirt jacket is surrounded by a gathering of people seated around him. The theater atmosphere is evident through these details of audience members positioned at different vantage points, all engrossed in the same film experience.\n\nThe setting provides a typical gathering spot for friends to enjoy a movie night together. The United Artists branding on the popcorn bucket, the casual way people are eating and interacting, and the overall composition of friends sharing a film in the theater capture the show's signature blend of genuine conversation and everyday moments. \n\nThe scene successfully conveys the essence of a casual get-together with friends at the movies, with Monica and Chandler as the focal point of the conversation while the surrounding details ground the scene in the camaraderie and comfort of a shared theater experience.",
+      "input_tokens": 3294,
+      "output_tokens": 304,
+      "characters": {},
+      "run": 1,
+      "clip_size_mb": 3.1
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 3294,
+    "avg_output_tokens": 304,
+    "avg_elapsed_s": 10.51,
+    "total_characters": {},
+    "est_frames": 39
+  }
+}

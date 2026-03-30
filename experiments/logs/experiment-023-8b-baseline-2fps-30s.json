@@ -1,0 +1,32 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:37:42",
+  "tag": "8b-baseline-2fps-30s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "2fps",
+  "runs": [
+    {
+      "elapsed_s": 16.91,
+      "output_text": "The scene takes place in a dimly lit movie theater with rows of red seats, where people are sitting in the darkness watching a screening together. Two couples share the frame in a continuous, playful exchange across two adjacent chairs.\n\nThe first couple includes a man with short brown hair wearing a blue shirt, who sits with a blue paper cup labeled United Artists in front of him. He alternates between eating popcorn from the cup and resting his hand on it while watching the film. Next to him is a woman with long dark hair wearing a black shirt. She engages him in lively banter throughout, gesturing animatedly, occasionally leaning toward him to direct her conversation and then pulling back to watch the screen. The two of them move through a back-and-forth exchange while remaining seated in their red theater seats, their conversation continuing as the movie plays.\n\nElsewhere in the same theater section, another couple appears in their own adjacent seats. The man wears a yellow puffy down vest over a black shirt and has long brown hair. The woman beside him wears a red puffy jacket over a black shirt. They sit close together with her arms resting on his shoulders as they watch the film. The man raises his eyebrows and looks toward the woman with a surprised expression while she glances down at him with hers slightly lowered. Throughout their moments together, people nearby stir and shift their seats\u2014a movement that includes a woman checking her phone while remaining engaged with the movie. The exchange between the two sees the man share a playful grin with her as she offers him a look that suggests she's about to speak to him again.\n\nThe clip maintains a humorous, lighthearted tone throughout, with the couples' interactions and expressions contrasting with the quiet, communal atmosphere of the theater. While the movie itself is playing, both couples maintain their banter while watching, creating a sense of friendly, ongoing conversation as part of the shared moviegoing experience.",
+      "input_tokens": 4826,
+      "output_tokens": 389,
+      "characters": {},
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 4826,
+    "avg_output_tokens": 389,
+    "avg_elapsed_s": 16.91,
+    "total_characters": {},
+    "est_frames": 58
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:50:09",
+  "tag": "8b-tq4-half-fps-30s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "0.5fps",
+  "runs": [
+    {
+      "elapsed_s": 9.79,
+      "output_text": "In a dimly lit theater filled with rows of red seating, Jennifer Aniston and Matthew Perry sit together in the dark. Jennifer has long brown hair and a black jacket, holding a blue cup of popcorn; Matthew is in a blue shirt with a blue skullband, eating his popcorn and holding a cup with a lid. They are engaged in a casual conversation while surrounded by the ambient glow of the theater, with other moviegoers scattered around them.\n\nA woman seated nearby, wearing glasses and a black jacket along with black pants, leans over toward Matthew while still sitting in her seat. She continues talking to him, and Matthew leans back in his red seat, smiling back at her. The exchange between them comes across as friendly and lighthearted as the theater's low lighting creates a cozy atmosphere around the group.\n\nAs the conversation carries on in the cinematic setting, Matthew remains relaxed, smiling toward the woman across from him while still in possession of his popcorn cup. Just before this conclusion, a man enters the frame and brings some props along with him, adding another presence to the theater's shared movie-watching environment.",
+      "input_tokens": 1190,
+      "output_tokens": 228,
+      "characters": {},
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 1190,
+    "avg_output_tokens": 228,
+    "avg_elapsed_s": 9.79,
+    "total_characters": {},
+    "est_frames": 14
+  }
+}

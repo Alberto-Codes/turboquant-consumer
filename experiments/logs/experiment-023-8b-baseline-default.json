@@ -1,0 +1,40 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:18:05",
+  "tag": "8b-baseline-default",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "default",
+  "runs": [
+    {
+      "elapsed_s": 12.82,
+      "output_text": "This scene from Seinfeld takes place in a movie theater filled with red seats. The camera first focuses on Jerry Seinfeld and Elaine Benes sitting together. Jerry is across from Elaine, casually studying her while waiting for her to finish talking. Both are holding United Artists popcorn cups, and he briefly brings a piece of popcorn to his mouth.\n\nThe scene then cuts to Elaine and George Costanza sharing another seat in the same theater. Elaine appears particularly engaged, her mouth open as if reacting with surprise or excitement to something on screen. George is notably disengaged and staring off into space rather than watching the movie.\n\nThe camera alternates between these two couples throughout. In the final moments, it returns to Jerry and Elaine. They're both looking toward the right side of the frame with expressions of mild confusion or concern as they continue their conversation.\n\nThe theater setting is established through details like the red seat cushions, the United Artists popcorn cup branding, and the visible members of the audience surrounding these characters. The lighting appears to be typical for a movie theater \u2013 somewhat dim in the foreground while moviegoers are visible farther back.\n\nThe clip captures the contrast between two friends sharing different moments: Jerry and George watching the same film but displaying completely different engagement levels, while Elaine and Jerry continue their own animated conversation during the cinematic experience.",
+      "input_tokens": 2609,
+      "output_tokens": 266,
+      "characters": {
+        "jerry": 5,
+        "george": 3,
+        "elaine": 6
+      },
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 2609,
+    "avg_output_tokens": 266,
+    "avg_elapsed_s": 12.82,
+    "total_characters": {
+      "jerry": 5,
+      "george": 3,
+      "elaine": 6
+    },
+    "est_frames": 31
+  }
+}
