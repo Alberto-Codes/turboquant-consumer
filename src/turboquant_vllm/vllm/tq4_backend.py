@@ -385,6 +385,15 @@ class TQ4AttentionImpl(FlashAttentionImpl):
         )
         self._cg_decompress_v = torch.empty_like(self._cg_decompress_k)
 
+        # Prefill scratch buffers: bounded by max_prefill_len so the paged
+        # decompress path never allocates full-cache-sized FP16 tensors.
+        prefill_tokens = min(self._max_prefill_len, max_tokens)
+        self._cg_prefill_k = torch.empty(
+            prefill_tokens, H, D, dtype=compute_dtype, device=device
+        )
+        self._cg_prefill_v = torch.empty_like(self._cg_prefill_k)
+        self._max_prefill_blocks = prefill_tokens // block_size
+
         # Compress output buffers for one decode step (single token)
         half_D = self._half_D
         self._cg_compress_packed = torch.empty(
@@ -411,15 +420,20 @@ class TQ4AttentionImpl(FlashAttentionImpl):
 
         self._cg_buffers_ready = True
         dtype_bytes = self._cg_decompress_k.element_size()
+        prefill_mib = prefill_tokens * H * D * dtype_bytes / (1024 * 1024)
         logger.info(
             "TQ4 CUDA graph buffers allocated: decompress=%s "
             "(fused_paged=%s, tokens=%d, source=%s), "
-            "decompress=2×%.1f MiB, compress+row+q_rot=%.1f KiB",
+            "decompress=2×%.1f MiB, prefill=%s (2×%.1f MiB, %d blocks), "
+            "compress+row+q_rot=%.1f KiB",
             self._cg_decompress_k.shape,
             self._fused_paged_available,
             decompress_tokens,
             buffer_source,
             decompress_tokens * H * D * dtype_bytes / (1024 * 1024),
+            self._cg_prefill_k.shape,
+            prefill_mib,
+            self._max_prefill_blocks,
             (half_D * H + 4 * H + self.num_heads * D * 4 + self._total_bytes) / 1024,
         )
 
@@ -562,6 +576,120 @@ class TQ4AttentionImpl(FlashAttentionImpl):
 
         return key_out.reshape(NB, BS, H, D), value_out.reshape(NB, BS, H, D)
 
+    def _decompress_cache_paged(
+        self,
+        kv_cache: torch.Tensor,
+        block_table: torch.Tensor,
+        seq_lens: torch.Tensor,
+        compute_dtype: torch.dtype,
+        *,
+        out_k: torch.Tensor,
+        out_v: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Decompress only the physical blocks referenced by block_table.
+
+        Not CUDA-graph-safe: uses ``torch.unique`` (variable-length output)
+        and conditional branching on runtime tensor values.
+
+        Instead of decompressing the entire cache (``NB*BS`` tokens), this
+        extracts the unique physical blocks actually referenced by the
+        current batch's ``block_table``, decompresses them contiguously,
+        and returns a remapped block table for Flash Attention.
+
+        Args:
+            kv_cache: ``(NB, BS, total_bytes)`` uint8 packed cache.
+            block_table: ``(batch, max_blocks_per_seq)`` int32 block table.
+            seq_lens: ``(batch,)`` int32 sequence lengths.
+            compute_dtype: Output dtype (e.g., ``torch.bfloat16``).
+            out_k: Pre-allocated ``(max_tokens, H, D)`` buffer for keys.
+            out_v: Pre-allocated ``(max_tokens, H, D)`` buffer for values.
+
+        Returns:
+            ``(key_cache, value_cache, remapped_block_table)`` where
+            key/value are ``(num_compact_blocks, BS, H, D)`` and
+            remapped_block_table maps logical blocks to compact indices.
+        """
+        NB, BS, _ = kv_cache.shape
+        H = self.num_kv_heads
+        half_D = self._half_D
+        D = self.head_size
+
+        # Extract valid block indices from block_table using seq_lens
+        max_blocks_per_seq = block_table.shape[1]
+        blocks_needed = (seq_lens + BS - 1) // BS  # ceil division
+        # Build mask of valid entries
+        col_idx = torch.arange(max_blocks_per_seq, device=block_table.device).unsqueeze(
+            0
+        )
+        valid_mask = col_idx < blocks_needed.unsqueeze(1)
+        valid_block_indices = block_table[valid_mask]
+
+        unique_blocks = torch.unique(valid_block_indices, sorted=True)
+        num_unique = unique_blocks.numel()
+
+        # Capacity check: use pre-allocated buffers or dynamic fallback
+        if num_unique <= self._max_prefill_blocks:
+            k_buf = out_k
+            v_buf = out_v
+        else:
+            logger.warning(
+                "Prefill paged decompress: %d unique blocks exceed "
+                "pre-allocated capacity (%d blocks), using dynamic fallback",
+                num_unique,
+                self._max_prefill_blocks,
+            )
+            fallback_tokens = num_unique * BS
+            k_buf = torch.empty(
+                fallback_tokens, H, D, dtype=compute_dtype, device=kv_cache.device
+            )
+            v_buf = torch.empty_like(k_buf)
+
+        # Gather referenced blocks and decompress
+        selected = kv_cache[unique_blocks]  # (num_unique, BS, total_bytes)
+        flat = selected.reshape(num_unique * BS, self._total_bytes)
+
+        k_packed = flat[:, : self._k_idx_end].contiguous().reshape(-1, H, half_D)
+        k_norms = (
+            flat[:, self._k_idx_end : self._k_norm_end]
+            .contiguous()
+            .view(torch.float32)
+            .reshape(-1, H, 1)
+        )
+        v_packed = (
+            flat[:, self._k_norm_end : self._v_idx_end]
+            .contiguous()
+            .reshape(-1, H, half_D)
+        )
+        v_norms = (
+            flat[:, self._v_idx_end :]
+            .contiguous()
+            .view(torch.float32)
+            .reshape(-1, H, 1)
+        )
+
+        # Slice output buffers to exact size needed
+        k_out_slice = k_buf[: num_unique * BS]
+        v_out_slice = v_buf[: num_unique * BS]
+
+        key_out = tq4_decompress(
+            k_packed, k_norms, self._tq4_centroids, compute_dtype, out=k_out_slice
+        )
+        value_out = tq4_decompress(
+            v_packed, v_norms, self._tq4_centroids, compute_dtype, out=v_out_slice
+        )
+
+        key_cache = key_out.reshape(num_unique, BS, H, D)
+        value_cache = value_out.reshape(num_unique, BS, H, D)
+
+        # Build remapped block table: old physical → compact 0..N-1
+        remap = torch.zeros(NB, dtype=block_table.dtype, device=block_table.device)
+        remap[unique_blocks] = torch.arange(
+            num_unique, dtype=block_table.dtype, device=block_table.device
+        )
+        remapped_block_table = remap[block_table]
+
+        return key_cache, value_cache, remapped_block_table
+
     # ----- TQ4 encode / decode helpers -----
 
     def _tq4_decode(
@@ -594,8 +722,8 @@ class TQ4AttentionImpl(FlashAttentionImpl):
 
     def _tq4_prefill(
         self, query, key, value, kv_cache, attn_metadata
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Prefill path: compress, rotate Q, decompress with dynamic allocation."""
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Prefill path: compress, rotate Q, paged decompress with bounded buffers."""
         num_actual_tokens = attn_metadata.num_actual_tokens
         if kv_cache is not None and key is not None and value is not None:
             self._compress_and_store(key, value, kv_cache, attn_metadata.slot_mapping)
@@ -603,12 +731,15 @@ class TQ4AttentionImpl(FlashAttentionImpl):
         q_slice = query[:num_actual_tokens]
         q_rot = (q_slice.float() @ self._tq4_rotation.T).to(q_slice.dtype)
 
-        key_cache, value_cache = self._decompress_cache(
+        key_cache, value_cache, remapped_bt = self._decompress_cache_paged(
             kv_cache,
+            attn_metadata.block_table,
+            attn_metadata.seq_lens,
             query.dtype,
-            apply_rotation=False,
+            out_k=self._cg_prefill_k,
+            out_v=self._cg_prefill_v,
         )
-        return q_rot, key_cache, value_cache
+        return q_rot, key_cache, value_cache, remapped_bt
 
     # ----- fused decode path (Story 6.3) -----
 
@@ -775,8 +906,9 @@ class TQ4AttentionImpl(FlashAttentionImpl):
             q_rot, key_cache, value_cache = self._tq4_decode(
                 query, key, value, kv_cache, attn_metadata
             )
+            fa_block_table = attn_metadata.block_table
         else:
-            q_rot, key_cache, value_cache = self._tq4_prefill(
+            q_rot, key_cache, value_cache, fa_block_table = self._tq4_prefill(
                 query, key, value, kv_cache, attn_metadata
             )
 
@@ -809,7 +941,7 @@ class TQ4AttentionImpl(FlashAttentionImpl):
             window_size=list(self.sliding_window)
             if self.sliding_window is not None
             else None,
-            block_table=attn_metadata.block_table,
+            block_table=fa_block_table,
             softcap=self.logits_soft_cap,
             scheduler_metadata=attn_metadata.scheduler_metadata,
             fa_version=self.vllm_flash_attn_version,

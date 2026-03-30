@@ -193,6 +193,7 @@ class TestTQ4PackedCacheRoundTrip:
         recon_k = key_cache[0, 0]  # block 0, pos 0
         recon_v = value_cache[0, 0]
 
+        failures = []
         for h in range(NUM_KV_HEADS):
             cos_k = torch.nn.functional.cosine_similarity(
                 key[0, h].unsqueeze(0), recon_k[h].unsqueeze(0)
@@ -200,8 +201,11 @@ class TestTQ4PackedCacheRoundTrip:
             cos_v = torch.nn.functional.cosine_similarity(
                 value[0, h].unsqueeze(0), recon_v[h].unsqueeze(0)
             ).item()
-            assert cos_k > 0.85, f"K head {h} cosine {cos_k:.4f} < 0.85"
-            assert cos_v > 0.85, f"V head {h} cosine {cos_v:.4f} < 0.85"
+            if cos_k <= 0.85:
+                failures.append(f"K head {h} cosine {cos_k:.4f} < 0.85")
+            if cos_v <= 0.85:
+                failures.append(f"V head {h} cosine {cos_v:.4f} < 0.85")
+        assert not failures, "\n".join(failures)
 
     def test_multi_token_scatter_write(self, tq4_quantizer) -> None:
         """Multiple tokens scattered to different slots."""
@@ -219,14 +223,17 @@ class TestTQ4PackedCacheRoundTrip:
 
         flat_k = key_cache.view(-1, NUM_KV_HEADS, HEAD_SIZE)
 
+        failures = []
         for i, slot in enumerate(slot_mapping.tolist()):
             for h in range(NUM_KV_HEADS):
                 cos_k = torch.nn.functional.cosine_similarity(
                     key[i, h].unsqueeze(0), flat_k[slot, h].unsqueeze(0)
                 ).item()
-                assert cos_k > 0.85, (
-                    f"Token {i} slot {slot} head {h}: K cos {cos_k:.4f}"
-                )
+                if cos_k <= 0.85:
+                    failures.append(
+                        f"Token {i} slot {slot} head {h}: K cos {cos_k:.4f}"
+                    )
+        assert not failures, "\n".join(failures)
 
     def test_empty_slots_decompress_to_zero(self, tq4_quantizer) -> None:
         """Unwritten slots should decompress to zero."""
