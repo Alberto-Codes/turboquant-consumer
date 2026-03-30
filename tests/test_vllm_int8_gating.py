@@ -249,7 +249,12 @@ class TestTwoKernelDispatch:
         mocker.patch.object(
             impl,
             "_tq4_prefill",
-            return_value=(torch.zeros(1), torch.zeros(1), torch.zeros(1)),
+            return_value=(
+                torch.zeros(1),
+                torch.zeros(1),
+                torch.zeros(1),
+                torch.zeros(1, dtype=torch.int32),
+            ),
         )
         mocker.patch("vllm.v1.attention.backends.fa_utils.flash_attn_varlen_func")
 
@@ -292,7 +297,12 @@ class TestTwoKernelDispatch:
         mocker.patch.object(
             impl,
             "_tq4_prefill",
-            return_value=(torch.zeros(1), torch.zeros(1), torch.zeros(1)),
+            return_value=(
+                torch.zeros(1),
+                torch.zeros(1),
+                torch.zeros(1),
+                torch.zeros(1, dtype=torch.int32),
+            ),
         )
         mocker.patch("vllm.v1.attention.backends.fa_utils.flash_attn_varlen_func")
 
