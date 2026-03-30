@@ -541,6 +541,50 @@ Quality remains consistent up to 33s — no TQ4-induced degradation. The 19s lim
 
 **Data:** `experiments/logs/experiment-015-vllm-duration-stress-test.json`
 
+#### Experiment 023: Frame count sweep — optimal video config (COMPLETE 2026-03-30)
+
+Isolated the frame sampling variable to find ideal clip duration, FPS, and backend settings. Tested Molmo2-8B on RTX 4090 (24 GiB) with baseline FP8 KV and TQ4 v1.2.2.
+
+**Key discovery — Molmo2 video token math:**
+- **83 tokens per frame** (9x9 pooled grid + 2 special tokens), not ~250 as previously estimated
+- vLLM caps frames via `max_model_len // 83` — at 6144, max 74 frames
+- `--media-io-kwargs '{"video": {"num_frames": N}}'` overrides default sampling when N exceeds the natural count
+
+**TQ4 8B results (30s Seinfeld clip, character mentions):**
+
+| FPS | Config | Jerry | George | Elaine | Total |
+|-----|--------|-------|--------|--------|-------|
+| ~1fps (default) | TQ4 | **8** | **6** | **6** | **20** |
+| ~1fps (default) | Baseline FP8 | 5 | 3 | 6 | 14 |
+| 2fps (num_frames=60) | TQ4 | 6 | 0 | 6 | 12 |
+| 2fps (num_frames=60) | Baseline FP8 | 0 | 0 | 0 | 0 |
+| 0.5fps (num_frames=15) | TQ4 | 0 | 0 | 0 | 0 |
+
+**TQ4 clip duration push (default ~1fps):**
+
+| Clip | Characters | Status |
+|------|-----------|--------|
+| 30s | jerry:8, george:6, elaine:6 | **Best quality** |
+| 45s | jerry:4, elaine:4 | Good |
+| 55s | jerry:5, george:4, elaine:6 | Good — all 3 characters |
+| 60s | — | OOM (ViT GELU, not KV cache) |
+
+**0.5fps unlocks long clips:** TQ4 at `num_frames=15` served a **120-second clip** (jerry:7, elaine:7) — no ViT OOM because only 15 frames are processed. Sparse sampling across 2 minutes catches enough scene diversity for show/character identification.
+
+**Three operating regimes identified:**
+
+| Regime | FPS | Clip | Best For |
+|--------|-----|------|----------|
+| Dense | 2fps | 5-15s | Frame-level detail (UI actions, text) |
+| Balanced | ~1fps (default) | 30-55s | Character recognition + scene understanding |
+| Sparse | 0.5fps | 60-120s+ | Scene diversity + show identification |
+
+**Recommended production config:** Molmo2-8B + TQ4 + 30s clips + default fps + `max_model_len=6144`.
+
+**ViT encoder is now the ceiling,** not KV cache. TQ4 solved the cache problem (v1.2.2). Pushing past 55s requires ViT quantization or chunked encoder processing.
+
+**Data:** `experiments/logs/experiment-023-findings.md`, `experiments/logs/experiment-023-*.json`
+
 #### Phase 3: vLLM integration for TQ4 KV cache
 
 **Goal:** Run TQ4 compression inside vLLM's serving stack for production deployment via the existing `vllm-nvidia.service` quadlet on port 8100.
