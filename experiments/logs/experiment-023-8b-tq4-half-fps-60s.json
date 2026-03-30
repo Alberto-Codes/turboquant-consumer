@@ -1,0 +1,36 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:50:19",
+  "tag": "8b-tq4-half-fps-60s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 60,
+  "frames_label": "0.5fps",
+  "runs": [
+    {
+      "elapsed_s": 11.29,
+      "output_text": "In a theater with red seats and a brown wall, a woman and a man sit side by side, each holding a blue cup bearing the United Airlines logo. The lights are dark as other moviegoers watch the film playing in front of them. The woman, wearing a sweater, gestures with her hands while talking, her expression animated and engaged. The man, dressed in blue, takes a bite of popcorn and holds the cup in his left hand as he watches her.\n\nconversation that continues as they both remain seated, each still with their blue United Airlines cups. The woman, still in her sweater, gestures while speaking, and the man, now eating popcorn while holding the cup, responds to her with his own gestures, including raising his right hand. The seating and dim lighting maintain the cinema atmosphere as other viewers sit around them.\n\nThe focus then shifts to Elaine. She is now wearing a red jacket and appears very upset, her expression serious and agitated. A man beside her speaks to her, trying to address her, while she appears defensive. The pair are seated and engaged in what looks to be an intense or tense conversational dynamic unfolding next to her.\n\nThroughout these scenes, both couples move between moments of focused engagement with the movie, reactions to what they're watching, and social interactions with their companions at the theater. The blue United Airlines cups serve as a consistent visual symbol linking the group's seating arrangement.",
+      "input_tokens": 1281,
+      "output_tokens": 286,
+      "characters": {
+        "elaine": 1
+      },
+      "run": 1,
+      "clip_size_mb": 23.7
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 1281,
+    "avg_output_tokens": 286,
+    "avg_elapsed_s": 11.29,
+    "total_characters": {
+      "elaine": 1
+    },
+    "est_frames": 15
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:40:13",
+  "tag": "8b-tq4-default-15s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 15,
+  "frames_label": "default",
+  "runs": [
+    {
+      "elapsed_s": 5.62,
+      "output_text": "In a theater with red seats and a brown wall, Carrie and Elaine talk while watching a movie. Carrie, wearing a black jacket, hands Elaine a tub of popcorn which Elaine accepts. Elaine holds a blue cup with United Artists branding while eating popcorn. She leans toward her drinking floss to say, \"I can't stand that it was the same person in everything,\" then adds, \"My god, not like always the role of an honest woman.\" The scene shows Carrie flossing as Elaine talks about being a.f-----d about having achieved more success than the fortunate \"3%,\" while they remain intent on the film playing in the background.",
+      "input_tokens": 2334,
+      "output_tokens": 132,
+      "characters": {
+        "elaine": 5
+      },
+      "run": 1,
+      "clip_size_mb": 6.8
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 2334,
+    "avg_output_tokens": 132,
+    "avg_elapsed_s": 5.62,
+    "total_characters": {
+      "elaine": 5
+    },
+    "est_frames": 28
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:23:46",
+  "tag": "8b-tq4-60f",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "60",
+  "runs": [
+    {
+      "elapsed_s": 19.91,
+      "output_text": "This scene from Seinfeld takes place in a movie theater filled with red seats and a red carpeted aisle. The camera follows Elaine and Jerry throughout their interaction, capturing their expressive seating and the reactions of the other moviegoers around them.\n\nThe main focus is on their intense, animated conversation as they watch a film. Jerry, wearing his blue sweater (and later shown with the blue T-shirt underneath), sits with his blue United Artists popcorn bucket in his lap, his mouth moving as he talks with a frustrated, almost exasperated look on his face. His mouth frequently rounds as if forming a knit-pull or wheezy reaction in response to Elaine's impassioned delivery. His brow stays furrowed and his expression tightens as their discussion escalates.\n\nElaine, in her v-neck sweater and wearing silver earrings with her long brown hair down, sits close beside him. Her expression is deeply engaged and energetic throughout\u2014the intensity of her delivery visible as she talks. A particular moment stands out where she brings her right hand up with her index finger extended in what appears to be a precise or emphatic point. At times, she glances at Jerry and back to the screen as she continues her animated address.\n\nThe theater is crowded, with dim lighting typical of an evening screening. Around them, several individuals become visible as the camera pans:\n\n\u2022 A man in a yellow puffer jacket sits beside a woman in a red coat, engaged in conversation\n\u2022 A man with glasses holding a cup lifts his hand to his head as he reacts to what's onscreen\n\u2022 Other patrons turn in their seats or fidget nearby\n\u2022 There's a long-haired man with a receding hairline in the background, drinking from a blue cup with a green base and talking to someone nearby\n\nAs Elaine's conversation with Jerry continues, other pairs around them start looking up from their screens, similarly drawn into and affected by the drama of their exchange. The atmosphere is marked by surprise, commotion, and conversation spilling outward from Elaine and Jerry, rolling through the red-seated rows until even those seated behind them, including the man with the blue United Artists cup, react and join in talking and reacting.\n\nThe camera work ties these moments together by placing Elaine and Jerry at the center while also showing how their focused, impassioned exchange translates into a broader, almost ripple-like response throughout the theater audience.",
+      "input_tokens": 4826,
+      "output_tokens": 483,
+      "characters": {
+        "jerry": 6,
+        "elaine": 6
+      },
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 4826,
+    "avg_output_tokens": 483,
+    "avg_elapsed_s": 19.91,
+    "total_characters": {
+      "jerry": 6,
+      "elaine": 6
+    },
+    "est_frames": 58
+  }
+}

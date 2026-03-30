@@ -1,0 +1,40 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:37:27",
+  "tag": "8b-baseline-2fps-15s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 15,
+  "frames_label": "2fps",
+  "runs": [
+    {
+      "elapsed_s": 14.61,
+      "output_text": "This appears to be a scene from the sitcom Seinfeld set in a movie theater. The conversation takes place in a dimly lit cinema environment with a red couch visible behind George and Elaine, and other moviegoers sitting around them.\n\nGeorge is seated on the left, wearing a blue shirt and holding a blue United Artists popcorn bucket with white text. Elaine sits beside him in a black shirt. She's engaged in talking with someone nearby at what seems to be a drive-in theater. Throughout their conversation, they alternate between serious looks and playful reactions, and Elaine particularly seems to enjoy the exchange while George maintains a more serious demeanor.\n\nThe camera work includes both medium shots of the pair and a close-up focus on Elaine, emphasizing her reactions during this interaction.\n\nDuring their conversation, they both eat, with a woman wearing a gray sweater around her and a green shirt visible when they're between bites.\n\nLater in the same scene, the focus shifts to a different conversation taking place between Jerry and his girlfriend Susan in another part of the theater. Jerry is wearing a red jacket with a floral pattern, and Susan is dressed in a red jacket as well. She's animatedly explaining something to him while he appears skeptical, occasionally glancing sideways with a raised eyebrow, then briefly looks down. The background shows other theater patrons, including a man with glasses and gray hair, all maintaining the casual, everyday atmosphere of a moviegoing outing.\n\nThe location appears to be a spacious theater with good seating arrangements, though the overall tone feels subdued rather than particularly entertaining, which aligns with Seinfeld's often mundane yet humorous portrayal of everyday situations.",
+      "input_tokens": 4366,
+      "output_tokens": 326,
+      "characters": {
+        "jerry": 2,
+        "george": 3,
+        "elaine": 4
+      },
+      "run": 1,
+      "clip_size_mb": 6.8
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 4366,
+    "avg_output_tokens": 326,
+    "avg_elapsed_s": 14.61,
+    "total_characters": {
+      "jerry": 2,
+      "george": 3,
+      "elaine": 4
+    },
+    "est_frames": 52
+  }
+}

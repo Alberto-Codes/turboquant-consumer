@@ -1,0 +1,40 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:46:26",
+  "tag": "8b-tq4-default-55s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 55,
+  "frames_label": "default",
+  "runs": [
+    {
+      "elapsed_s": 14.14,
+      "output_text": "This scene from Seinfeld takes place in a movie theater filled with red seats. The camera first focuses on George and Elaine sitting in the first row. George is holding a brown paper bag. Elaine, dressed in her iconic red jacket with a blue scarf, has her legs up and is animatedly gesturing with her hands as she makes her point to George. The theater is dimly lit, with the screen reflecting off the crowd's faces. The rows behind them are packed, with people holding cups and buckets along with popcorn.\n\nThe camera then pans down the theater to capture Jerry and Elaine's booth. Jerry is wearing his bright yellow puffer jacket, and has his legs stretched up. Elain \uc5ed\uc2dc in a red jacket with a blue scarf, has her legs up and is animatedly gesturing with her hands as she makes her point to Jerry. Both Jerry and Elaine look interested in what's happening on the screen, leaning forward slightly.\n\nGeorge and Elaine then look directly at the camera, appearing bewildered and confused. In the background, red seats fill the theater with a diverse crowd, some holding popcorn buckets and drink cups. The scene cuts back to Jerry and Elaine, who are now both surprised and focused on the screen.\n\nThroughout the scene, there's a sense of scattered attention within the theater. While individuals become engrossed at different moments, creating peaks of engagement before fading to moments of distraction, the overall atmosphere maintains Seinfeld's characteristic blend of humor and social observation about everyday life experiences and interactions. The red upholstery of the theater creates a warm, theatrical backdrop that contrasts with the varied expressions of bewilderment and interest displayed by the characters throughout the sequence.",
+      "input_tokens": 2702,
+      "output_tokens": 337,
+      "characters": {
+        "jerry": 5,
+        "george": 4,
+        "elaine": 6
+      },
+      "run": 1,
+      "clip_size_mb": 21.9
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 2702,
+    "avg_output_tokens": 337,
+    "avg_elapsed_s": 14.14,
+    "total_characters": {
+      "jerry": 5,
+      "george": 4,
+      "elaine": 6
+    },
+    "est_frames": 32
+  }
+}

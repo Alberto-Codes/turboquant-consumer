@@ -1,0 +1,38 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:44:15",
+  "tag": "8b-tq4-default-45s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 45,
+  "frames_label": "default",
+  "runs": [
+    {
+      "elapsed_s": 14.78,
+      "output_text": "This scene from Seinfeld takes place in a movie theater filled with red seats and a dim, intimate atmosphere. The camera follows Elaine and Jerry throughout their interaction, capturing their expressive seating and facial reactions.\n\nThe conversation occurs entirely through physical performance\u2014faces, body language, raised eyebrows, and animated hand movements convey all of the emotional beats between the two. Elaine leans forward at one point, resting her left hand on Jerry's shoulder while gesturing expressively with her right. Jerry, reacting with exaggerated facial expressions, along with upraised eyebrows and outward turns of the mouth, frequently glances to his right toward Elaine.\n\nThe seating has a striking visual element\u2014a woman in a bright red jacket sits beside Jerry, and a man in a bright yellow jacket sits next to Elaine. This creates a pleasing color contrast against the darker background and red seats, drawing the eye to the main interactions.\n\nThe camera work remains close to the characters, maintaining focus on their expressions and reactions as they engage with one another. Surrounding them, other theatergoers appear peripherally\u2014some in casual late-night movie attire, others in everyday clothing. At one point, a man with glasses and a blue shirt is visible in the background, adding to the sense of an ordinary, dimly lit movie theater setting.\n\nThroughout, there's no spoken dialogue. Instead, the scene relies on the actors' timing and physical comedy, showcasing how much storytelling can be done through face and body alone. The final push of the camera pulls back to survey the entire red-lined theater one last time before the clip ends, leaving us with purely visual impressions of the shared moment between the characters.",
+      "input_tokens": 2701,
+      "output_tokens": 331,
+      "characters": {
+        "jerry": 4,
+        "elaine": 4
+      },
+      "run": 1,
+      "clip_size_mb": 18.1
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 2701,
+    "avg_output_tokens": 331,
+    "avg_elapsed_s": 14.78,
+    "total_characters": {
+      "jerry": 4,
+      "elaine": 4
+    },
+    "est_frames": 32
+  }
+}

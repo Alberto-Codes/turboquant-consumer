@@ -1,0 +1,38 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:19:55",
+  "tag": "8b-baseline-60f",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "60",
+  "runs": [
+    {
+      "elapsed_s": 15.57,
+      "output_text": "This scene from Seinfeld takes place in a movie theater filled with red seats. The camera first focuses on Jerry Seinfeld and Elaine Benes sitting together. Jerry is across from Elaine, casually studying a blue United Artists popcorn bucket, with the theater's red seats and other patrons visible in the background creating the typical cinematic atmosphere.\n\nThe conversation between Jerry and Elaine starts off casual, with both characters sharing a popcorn bucket while engaged in an easy back-and-forth exchange. Their conversation continues as they move from a more lighthearted tone to a discussion about current events. Elaine becomes particularly animated during this portion of the conversation, gesturing expressively with her hands.\n\nThe scene then transitions to show two other characters from the same movie theater setting. These appear to be different individuals from Jerry and Elaine, seated together in the same style of red theater seating. A man and a woman are engaged in their own conversation, likely another casual exchange between theatergoers during a movie screening. Behind this couple, there appears to be another man holding a red United Artists popcorn bucket, creating a visual parallel to Jerry and Elaine's shared snack earlier in the scene.\n\nThroughout the sequence, the atmosphere remains one of typical casual conversation that unfolds during a movie-going experience, with the characters moving between lighthearted banter and more focused discussions about current events. The United Artists popcorn buckets and the shared seating arrangements create a consistent thread connecting the different pairs of characters in this slice-of-life theater moment from the show.",
+      "input_tokens": 4826,
+      "output_tokens": 303,
+      "characters": {
+        "jerry": 5,
+        "elaine": 6
+      },
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 4826,
+    "avg_output_tokens": 303,
+    "avg_elapsed_s": 15.57,
+    "total_characters": {
+      "jerry": 5,
+      "elaine": 6
+    },
+    "est_frames": 58
+  }
+}

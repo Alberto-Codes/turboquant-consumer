@@ -1,0 +1,38 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 11:37:13",
+  "tag": "8b-baseline-2fps-5s",
+  "model_id": "allenai/Molmo2-8B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 5,
+  "frames_label": "2fps",
+  "runs": [
+    {
+      "elapsed_s": 13.14,
+      "output_text": "This scene from Seinfeld takes place in a movie theater. Jerry Seinfeld and Elaine Benes are seated in the row in front, both wearing black shirts and holding their unnaturally shaped popcorn buckets.\n\nJerry appears rather dazed, with his mouth slightly open and his eyes fixed off to the right, suggestively at the movie screen. His simple sweater hints that he might not have dressed for a formal viewing experience.\n\nElaine is quite animated by contrast. She's seated next to Jerry with her hands raised as she speaks, her mouth slightly open showing her teeth. As the scene continues, she continues gesturing expressively while talking to Jerry. Her energetic demeanor forms a stark counterpoint to Jerry's apparent inattentiveness.\n\nThe setting is clearly a theater, with red seating visible in the foreground row where they sit. Other moviegoers populate the background rows, though they're out of focus and not the main focus of the shot.\n\nInterestingly, the woman on Jerry's left is rocking herself side to side as she talks toJerry. This rocking motion suggests she might be in despair, conveying a sense of worry or frustration while engaging with Jerry during their theater outing. The contrast between Jerry's dazed, passive state and Elaine's and the woman's more animated engagements creates a snapshot of the show's characteristic blend of humor and character dynamics.",
+      "input_tokens": 3294,
+      "output_tokens": 271,
+      "characters": {
+        "jerry": 9,
+        "elaine": 3
+      },
+      "run": 1,
+      "clip_size_mb": 3.1
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 3294,
+    "avg_output_tokens": 271,
+    "avg_elapsed_s": 13.14,
+    "total_characters": {
+      "jerry": 9,
+      "elaine": 3
+    },
+    "est_frames": 39
+  }
+}

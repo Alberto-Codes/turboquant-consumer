@@ -1,0 +1,32 @@
+{
+  "experiment": "023-frame-count-sweep",
+  "date": "2026-03-30 10:14:07",
+  "tag": "baseline-75f",
+  "model_id": "allenai/Molmo2-4B",
+  "max_new_tokens": 512,
+  "prompt": "Describe what is happening in this video clip in detail. Include the names of any characters you recognize, the setting, and any notable actions or dialogue.",
+  "episode": "Seinfeld - S05E12 - The Stall - [WEBDL-720P][AAC 2.0][H264]-NTB.mkv",
+  "episode_duration_s": 1371.3,
+  "start_offset_s": 120,
+  "clip_duration_s": 30,
+  "frames_label": "75",
+  "runs": [
+    {
+      "elapsed_s": 14.93,
+      "output_text": "This scene from the movie \"Cruel Intentions\" takes place in a crowded movie theater with red seating and dark surroundings. A couple appears in the frame \u2013 across from them, a woman with long brown hair wearing a red jacket has a concerned, emphatic expression. She's animatedly gesturing with her hands, moving her brows as she speaks. Opposite her sits a man in a mustard or yellow jacket, expressing confusion with his hands on his head. The woman continues with her expressive delivery as he stares up at the theater screen, his head still resting on his hands. Around them, other theatre-goers are visible, some eating, all fixed on the film playing. Among them, a man wearing glasses can be spotted.\n\nThis particular shot appears to serve as a quick cut between two different pairs of characters in the theater setting. The pacing is brisk and the mood remains intentionally chaotic \u2013 everybody shares the same rapt focus on the screen, which contributes to the comedic tension of the moment. The man's confusion and the woman's strained expression suggest they may be in conflict or experiencing a shared, unsettling moment.\n\nThe background remains largely dark, with only faint outlines of the faces and heads of the audience visible. The contrast between the color of the woman's red jacket and the yellow of the man's shirt stands out against the somber background. The red theater seats provide a consistent visual element throughout.\n\nThe film maintains its signature mix of coming-of-age themes and provocative tone, and this theater scene exemplifies the juxtaposition of unexpected reactions and sharp, theatrical delivery that's characteristic of \"Cruel Intentions.\"",
+      "input_tokens": 6067,
+      "output_tokens": 328,
+      "characters": {},
+      "run": 1,
+      "clip_size_mb": 12.5
+    }
+  ],
+  "summary": {
+    "successful_runs": 1,
+    "avg_input_tokens": 6067,
+    "avg_output_tokens": 328,
+    "avg_elapsed_s": 14.93,
+    "total_characters": {},
+    "est_frames": 24
+  }
+}
