@@ -624,9 +624,7 @@ class TQ4AttentionImpl(FlashAttentionImpl):
         valid_mask = col_idx < blocks_needed.unsqueeze(1)
         valid_block_indices = block_table[valid_mask]
 
-        unique_blocks, inverse = torch.unique(
-            valid_block_indices, sorted=True, return_inverse=True
-        )
+        unique_blocks = torch.unique(valid_block_indices, sorted=True)
         num_unique = unique_blocks.numel()
 
         # Capacity check: use pre-allocated buffers or dynamic fallback
