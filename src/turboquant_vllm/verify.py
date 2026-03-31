@@ -2,9 +2,9 @@
 
 Runs a 128-token random Gaussian prefill through CompressedDynamicCache and
 reports per-layer cosine similarity vs uncompressed DynamicCache. Outputs
-PASS/FAIL against a configurable threshold (default 0.999, cache parity tier).
+PASS/FAIL against a configurable threshold (default 0.99, compression quality tier).
 
-Validated model families (Molmo2, Mistral, Llama) report ``"validation": "VALIDATED"``
+Validated model families (Molmo2, Mistral, Llama, Qwen2.5, Phi) report ``"validation": "VALIDATED"``
 in the output; unvalidated models report ``"UNVALIDATED"`` as a warning.
 
 Usage:
@@ -42,9 +42,13 @@ VALIDATED_MODELS: dict[str, str] = {
     "molmo2": "Molmo2",
     "mistral": "Mistral",
     "llama": "Llama",
+    "qwen2": "Qwen2.5",
+    "phi3": "Phi",
 }
 
-CACHE_PARITY_THRESHOLD = 0.999  # cache parity tier
+COMPRESSION_QUALITY_THRESHOLD = (
+    0.99  # compression quality tier (compressed vs uncompressed)
+)
 
 
 def _detect_model_config(model: Any) -> dict[str, int]:
@@ -252,8 +256,8 @@ def _format_human_summary(result: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> None:
     """CLI entry point for the verify command.
 
-    Parses ``--model``, ``--bits`` (3 or 4), ``--threshold``, and ``--json``
-    flags, runs verification, and exits 0 (PASS) or 1 (FAIL).
+    Parses ``--model``, ``--bits`` (3 or 4), ``--threshold`` (default 0.99),
+    and ``--json`` flags, runs verification, and exits 0 (PASS) or 1 (FAIL).
 
     Args:
         argv: Command-line arguments. Uses sys.argv[1:] if None.
@@ -276,8 +280,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=CACHE_PARITY_THRESHOLD,
-        help=f"Minimum cosine similarity for PASS (default: {CACHE_PARITY_THRESHOLD})",
+        default=COMPRESSION_QUALITY_THRESHOLD,
+        help=f"Minimum cosine similarity for PASS (default: {COMPRESSION_QUALITY_THRESHOLD})",
     )
     parser.add_argument(
         "--json",

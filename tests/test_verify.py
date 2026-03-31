@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from turboquant_vllm.verify import (
-    CACHE_PARITY_THRESHOLD,
+    COMPRESSION_QUALITY_THRESHOLD,
     VALIDATED_MODELS,
     _format_human_summary,
     _run_verification,
@@ -25,7 +25,7 @@ def _make_result(
     bits: int = 4,
     per_layer_cosine: list[float] | None = None,
     min_cosine: float | None = 0.9995,
-    threshold: float = CACHE_PARITY_THRESHOLD,
+    threshold: float = COMPRESSION_QUALITY_THRESHOLD,
     validation: str = "VALIDATED",
     family_name: str | None = "Molmo2",
     status: str | None = None,
@@ -57,7 +57,7 @@ def _make_result(
 
 
 class TestVerifyArgparse:
-    def test_model_and_bits_required(self, mocker):
+    def test_model_and_bits_required(self, mocker) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(),
@@ -66,7 +66,7 @@ class TestVerifyArgparse:
             main([])
         assert exc_info.value.code != 0
 
-    def test_model_flag_parsed(self, mocker):
+    def test_model_flag_parsed(self, mocker) -> None:
         spy = mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(model="allenai/Molmo2-4B"),
@@ -74,9 +74,11 @@ class TestVerifyArgparse:
         with pytest.raises(SystemExit) as exc_info:
             main(["--model", "allenai/Molmo2-4B", "--bits", "4"])
         assert exc_info.value.code == 0
-        spy.assert_called_once_with("allenai/Molmo2-4B", 4, CACHE_PARITY_THRESHOLD)
+        spy.assert_called_once_with(
+            "allenai/Molmo2-4B", 4, COMPRESSION_QUALITY_THRESHOLD
+        )
 
-    def test_bits_flag_parsed(self, mocker):
+    def test_bits_flag_parsed(self, mocker) -> None:
         spy = mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(bits=3),
@@ -84,9 +86,9 @@ class TestVerifyArgparse:
         with pytest.raises(SystemExit) as exc_info:
             main(["--model", "test/m", "--bits", "3"])
         assert exc_info.value.code == 0
-        spy.assert_called_once_with("test/m", 3, CACHE_PARITY_THRESHOLD)
+        spy.assert_called_once_with("test/m", 3, COMPRESSION_QUALITY_THRESHOLD)
 
-    def test_threshold_default(self, mocker):
+    def test_threshold_default(self, mocker) -> None:
         spy = mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(),
@@ -94,9 +96,9 @@ class TestVerifyArgparse:
         with pytest.raises(SystemExit):
             main(["--model", "test/m", "--bits", "4"])
         _, args, _ = spy.mock_calls[0]
-        assert args[2] == CACHE_PARITY_THRESHOLD
+        assert args[2] == COMPRESSION_QUALITY_THRESHOLD
 
-    def test_threshold_custom(self, mocker):
+    def test_threshold_custom(self, mocker) -> None:
         spy = mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(threshold=0.998),
@@ -105,7 +107,7 @@ class TestVerifyArgparse:
             main(["--model", "test/m", "--bits", "4", "--threshold", "0.998"])
         spy.assert_called_once_with("test/m", 4, 0.998)
 
-    def test_json_flag_default_false(self, mocker, capsys):
+    def test_json_flag_default_false(self, mocker, capsys) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(),
@@ -117,7 +119,7 @@ class TestVerifyArgparse:
         with pytest.raises(json.JSONDecodeError):
             json.loads(captured.out)
 
-    def test_json_flag_enables_json_output(self, mocker, capsys):
+    def test_json_flag_enables_json_output(self, mocker, capsys) -> None:
         result = _make_result()
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
@@ -131,7 +133,7 @@ class TestVerifyArgparse:
 
 
 class TestVerifyOutput:
-    def test_json_has_all_required_fields(self, mocker, capsys):
+    def test_json_has_all_required_fields(self, mocker, capsys) -> None:
         result = _make_result()
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
@@ -153,7 +155,7 @@ class TestVerifyOutput:
         }
         assert required_fields.issubset(parsed.keys())
 
-    def test_json_versions_has_three_keys(self, mocker, capsys):
+    def test_json_versions_has_three_keys(self, mocker, capsys) -> None:
         result = _make_result()
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
@@ -169,7 +171,7 @@ class TestVerifyOutput:
             "torch",
         }
 
-    def test_pass_exits_zero(self, mocker):
+    def test_pass_exits_zero(self, mocker) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(min_cosine=0.9995, status="PASS"),
@@ -178,12 +180,12 @@ class TestVerifyOutput:
             main(["--model", "test/m", "--bits", "4"])
         assert exc_info.value.code == 0
 
-    def test_fail_exits_one(self, mocker):
+    def test_fail_exits_one(self, mocker) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(
-                min_cosine=0.997,
-                per_layer_cosine=[0.998, 0.997],
+                min_cosine=0.985,
+                per_layer_cosine=[0.986, 0.985],
                 status="FAIL",
             ),
         )
@@ -191,7 +193,7 @@ class TestVerifyOutput:
             main(["--model", "test/m", "--bits", "4"])
         assert exc_info.value.code == 1
 
-    def test_human_summary_to_stderr_with_json(self, mocker, capsys):
+    def test_human_summary_to_stderr_with_json(self, mocker, capsys) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(),
@@ -202,7 +204,7 @@ class TestVerifyOutput:
         assert "Model:" in captured.err
         assert "Result:" in captured.err
 
-    def test_human_summary_to_stdout_without_json(self, mocker, capsys):
+    def test_human_summary_to_stdout_without_json(self, mocker, capsys) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(),
@@ -213,7 +215,7 @@ class TestVerifyOutput:
         assert "Model:" in captured.out
         assert "Result:" in captured.out
 
-    def test_human_summary_format(self):
+    def test_human_summary_format(self) -> None:
         result = _make_result(
             model="allenai/Molmo2-4B",
             bits=4,
@@ -229,7 +231,7 @@ class TestVerifyOutput:
         assert "0.9991" in summary
         assert "PASS" in summary
 
-    def test_human_summary_many_layers_truncated(self):
+    def test_human_summary_many_layers_truncated(self) -> None:
         cosines = [0.999 + i * 0.0001 for i in range(32)]
         result = _make_result(
             per_layer_cosine=cosines,
@@ -240,33 +242,41 @@ class TestVerifyOutput:
 
 
 class TestValidatedModels:
-    def test_molmo2_exact_match(self):
+    def test_molmo2_exact_match(self) -> None:
         assert "molmo2" in VALIDATED_MODELS
         assert VALIDATED_MODELS["molmo2"] == "Molmo2"
 
-    def test_mistral_exact_match(self):
+    def test_mistral_exact_match(self) -> None:
         assert "mistral" in VALIDATED_MODELS
         assert VALIDATED_MODELS["mistral"] == "Mistral"
 
-    def test_llama_exact_match(self):
+    def test_llama_exact_match(self) -> None:
         assert "llama" in VALIDATED_MODELS
         assert VALIDATED_MODELS["llama"] == "Llama"
 
-    def test_unvalidated_for_unknown_type(self):
+    def test_qwen2_exact_match(self) -> None:
+        assert "qwen2" in VALIDATED_MODELS
+        assert VALIDATED_MODELS["qwen2"] == "Qwen2.5"
+
+    def test_phi3_exact_match(self) -> None:
+        assert "phi3" in VALIDATED_MODELS
+        assert VALIDATED_MODELS["phi3"] == "Phi"
+
+    def test_unvalidated_for_unknown_type(self) -> None:
         assert "gpt2" not in VALIDATED_MODELS
 
-    def test_no_substring_match(self):
+    def test_no_substring_match(self) -> None:
         # "molmo2" should not match "molmo2-extended" or "xmolmo2"
         assert "molmo2-extended" not in VALIDATED_MODELS
         assert "xmolmo2" not in VALIDATED_MODELS
 
-    def test_display_name_mapping(self):
+    def test_display_name_mapping(self) -> None:
         for model_type, display_name in VALIDATED_MODELS.items():
             assert isinstance(model_type, str)
             assert isinstance(display_name, str)
             assert len(display_name) > 0
 
-    def test_validated_result_field(self, mocker, capsys):
+    def test_validated_result_field(self, mocker, capsys) -> None:
         result = _make_result(validation="VALIDATED", family_name="Molmo2")
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
@@ -278,7 +288,7 @@ class TestValidatedModels:
         parsed = json.loads(captured.out)
         assert parsed["validation"] == "VALIDATED"
 
-    def test_unvalidated_result_field(self, mocker, capsys):
+    def test_unvalidated_result_field(self, mocker, capsys) -> None:
         result = _make_result(validation="UNVALIDATED", family_name=None)
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
@@ -292,10 +302,10 @@ class TestValidatedModels:
 
 
 class TestVerifyThreshold:
-    def test_default_threshold_value(self):
-        assert CACHE_PARITY_THRESHOLD == 0.999
+    def test_default_threshold_value(self) -> None:
+        assert COMPRESSION_QUALITY_THRESHOLD == 0.99
 
-    def test_pass_above_threshold(self, mocker):
+    def test_pass_above_threshold(self, mocker) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(min_cosine=0.9995, status="PASS"),
@@ -304,12 +314,12 @@ class TestVerifyThreshold:
             main(["--model", "test/m", "--bits", "4"])
         assert exc_info.value.code == 0
 
-    def test_fail_below_threshold(self, mocker):
+    def test_fail_below_threshold(self, mocker) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(
-                min_cosine=0.998,
-                per_layer_cosine=[0.9985, 0.998],
+                min_cosine=0.985,
+                per_layer_cosine=[0.986, 0.985],
                 status="FAIL",
             ),
         )
@@ -317,7 +327,7 @@ class TestVerifyThreshold:
             main(["--model", "test/m", "--bits", "4"])
         assert exc_info.value.code == 1
 
-    def test_custom_threshold_pass(self, mocker):
+    def test_custom_threshold_pass(self, mocker) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(
@@ -330,7 +340,7 @@ class TestVerifyThreshold:
             main(["--model", "test/m", "--bits", "4", "--threshold", "0.998"])
         assert exc_info.value.code == 0
 
-    def test_custom_threshold_fail(self, mocker):
+    def test_custom_threshold_fail(self, mocker) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(
@@ -344,7 +354,7 @@ class TestVerifyThreshold:
             main(["--model", "test/m", "--bits", "4", "--threshold", "0.9999"])
         assert exc_info.value.code == 1
 
-    def test_exact_threshold_passes(self, mocker):
+    def test_exact_threshold_passes(self, mocker) -> None:
         mocker.patch(
             "turboquant_vllm.verify._run_verification",
             return_value=_make_result(
@@ -367,8 +377,6 @@ class TestVerifyGPU:
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
     def test_run_verification_molmo2_passes(self) -> None:
         """End-to-end verification of Molmo2-4B on real GPU."""
-        # 0.99 = compression quality tier for random Gaussian data at 4-bit
-        # (verify.py's default 0.999 is cache parity tier — wrong for this comparison)
         try:
             result = _run_verification("allenai/Molmo2-4B", bits=4, threshold=0.99)
             assert result["status"] == "PASS"

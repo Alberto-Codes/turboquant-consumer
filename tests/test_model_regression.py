@@ -29,6 +29,8 @@ REGRESSION_MODELS = [
     pytest.param("allenai/Molmo2-4B", id="molmo2-4b"),
     pytest.param("mistralai/Mistral-7B-v0.1", id="mistral-7b"),
     pytest.param("meta-llama/Llama-3.1-8B", id="llama-3.1-8b"),
+    pytest.param("Qwen/Qwen2.5-3B", id="qwen2.5-3b"),
+    pytest.param("microsoft/phi-4", id="phi-4"),
 ]
 
 
