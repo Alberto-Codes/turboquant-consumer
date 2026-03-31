@@ -40,18 +40,23 @@ class TestTQ4ByteCalculation:
     """TQ4 page layout math."""
 
     def test_bytes_per_token_head_128(self) -> None:
+        """head_dim=128 yields 68 bytes per token per head."""
         assert _tq4_bytes_per_token(128) == 68
 
     def test_bytes_per_token_head_64(self) -> None:
+        """head_dim=64 yields 36 bytes per token per head."""
         assert _tq4_bytes_per_token(64) == 36
 
     def test_bytes_per_token_head_256(self) -> None:
+        """head_dim=256 yields 132 bytes per token per head."""
         assert _tq4_bytes_per_token(256) == 132
 
     def test_bytes_per_token_kv_128(self) -> None:
+        """head_dim=128 yields 136 bytes per token for K+V combined."""
         assert _tq4_bytes_per_token_kv(128) == 136
 
     def test_bytes_per_token_kv_64(self) -> None:
+        """head_dim=64 yields 72 bytes per token for K+V combined."""
         assert _tq4_bytes_per_token_kv(64) == 72
 
 
@@ -64,6 +69,7 @@ class TestTQ4FullAttentionSpec:
     """TQ4 cache spec page size override."""
 
     def test_subclasses_full_attention_spec(self) -> None:
+        """TQ4FullAttentionSpec inherits from FullAttentionSpec."""
         assert issubclass(TQ4FullAttentionSpec, FullAttentionSpec)
 
     def test_page_size_bytes_molmo2_8b(self) -> None:
@@ -95,6 +101,7 @@ class TestTQ4FullAttentionSpec:
         assert abs(ratio - 3.76) < 0.01
 
     def test_dtype_is_uint8(self) -> None:
+        """Spec preserves uint8 dtype for packed cache storage."""
         spec = TQ4FullAttentionSpec(
             block_size=16,
             num_kv_heads=8,
@@ -104,6 +111,7 @@ class TestTQ4FullAttentionSpec:
         assert spec.dtype == torch.uint8
 
     def test_block_size_scales_page_size(self) -> None:
+        """Doubling block_size doubles page_size_bytes."""
         spec_16 = TQ4FullAttentionSpec(
             block_size=16,
             num_kv_heads=8,
@@ -119,6 +127,7 @@ class TestTQ4FullAttentionSpec:
         assert spec_32.page_size_bytes == 2 * spec_16.page_size_bytes
 
     def test_frozen_dataclass(self) -> None:
+        """Frozen dataclass prevents attribute mutation."""
         spec = TQ4FullAttentionSpec(
             block_size=16,
             num_kv_heads=8,
@@ -138,6 +147,7 @@ class TestTQ4PackedCacheRoundTrip:
     """Compress -> store -> decompress round-trip on packed uint8 cache."""
 
     def test_compress_store_decompress_single_token(self, tq4_quantizer) -> None:
+        """Single token compress-store-decompress writes to correct slot."""
         impl = make_impl(tq4_quantizer)
         kv_cache = make_cache(num_blocks=4)
 
@@ -315,10 +325,79 @@ class TestTQ4PackedCacheRoundTrip:
         assert value_cache.dtype == torch.bfloat16
 
     def test_no_ensure_device_flag(self, tq4_quantizer) -> None:
-        """Eager device init removed _tq4_on_device flag (D7 mod 5)."""
+        """Eager device init removed legacy _tq4_on_device flag (D7 mod 5)."""
         impl = make_impl(tq4_quantizer)
         assert not hasattr(impl, "_tq4_on_device")
         assert not hasattr(impl, "_ensure_device")
+
+
+# ---------------------------------------------------------------------------
+# Story 8.2: kv_cache=None guard
+# ---------------------------------------------------------------------------
+
+
+class TestForwardKvCacheNone:
+    """Guard: forward() handles kv_cache=None without crashing."""
+
+    def test_forward_kv_cache_none_returns_zero(self, tq4_quantizer) -> None:
+        """forward() with kv_cache=None returns zero-filled output."""
+        from types import SimpleNamespace
+
+        impl = make_impl(tq4_quantizer)
+        # forward() needs attn_type for the encoder check — set to DECODER
+        from vllm.v1.attention.backend import AttentionType
+
+        impl.attn_type = AttentionType.DECODER
+
+        num_tokens = 4
+        query = torch.randn(num_tokens, NUM_KV_HEADS * HEAD_SIZE)
+        key = torch.randn(num_tokens, NUM_KV_HEADS * HEAD_SIZE)
+        value = torch.randn(num_tokens, NUM_KV_HEADS * HEAD_SIZE)
+        output = torch.ones(num_tokens, NUM_KV_HEADS * HEAD_SIZE)
+
+        attn_metadata = SimpleNamespace(num_actual_tokens=num_tokens)
+
+        result = impl.forward(
+            layer=None,
+            query=query,
+            key=key,
+            value=value,
+            kv_cache=None,
+            attn_metadata=attn_metadata,
+            output=output,
+        )
+
+        assert result is output
+        assert (result == 0).all(), "Output should be zero-filled"
+
+    def test_forward_kv_cache_none_does_not_init_buffers(self, tq4_quantizer) -> None:
+        """kv_cache=None should not trigger CUDA graph buffer allocation."""
+        from types import SimpleNamespace
+
+        impl = make_impl(tq4_quantizer)
+        from vllm.v1.attention.backend import AttentionType
+
+        impl.attn_type = AttentionType.DECODER
+
+        num_tokens = 1
+        query = torch.randn(num_tokens, NUM_KV_HEADS * HEAD_SIZE)
+        key = torch.randn(num_tokens, NUM_KV_HEADS * HEAD_SIZE)
+        value = torch.randn(num_tokens, NUM_KV_HEADS * HEAD_SIZE)
+        output = torch.ones(num_tokens, NUM_KV_HEADS * HEAD_SIZE)
+
+        attn_metadata = SimpleNamespace(num_actual_tokens=num_tokens)
+
+        impl.forward(
+            layer=None,
+            query=query,
+            key=key,
+            value=value,
+            kv_cache=None,
+            attn_metadata=attn_metadata,
+            output=output,
+        )
+
+        assert not impl._cg_buffers_ready, "_cg_buffers_ready should remain False"
 
 
 # TestCUDAGraphBufferPreallocation moved to test_vllm_cache_cudagraph.py

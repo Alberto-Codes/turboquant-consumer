@@ -870,6 +870,11 @@ class TQ4AttentionImpl(FlashAttentionImpl):
             output.zero_()
             return output
 
+        # Warmup with no cache allocated yet
+        if kv_cache is None:
+            output.zero_()
+            return output
+
         # Encoder attention: no TQ4, delegate to parent
         # (VIT uses a separate backend, but guard just in case)
         from vllm.v1.attention.backend import AttentionType
