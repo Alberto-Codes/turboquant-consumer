@@ -6,6 +6,9 @@ import pytest
 import torch
 
 from turboquant_vllm.kv_cache import CompressedDynamicCache
+from turboquant_vllm.quantizer import TurboQuantMSE
+from turboquant_vllm.triton.tq4_compress import tq4_compress
+from turboquant_vllm.triton.tq4_decompress import tq4_decompress
 
 from .conftest import BITS, BITS_4, DIM, cosine_similarity_flat
 
@@ -187,3 +190,80 @@ class TestNibblePacking:
         assert stats["nibble_packed"] is True
         assert stats["head_dim"] == DIM
         assert stats["compression_ratio"] > 3.5
+
+
+# ---------------------------------------------------------------------------
+# Multi head-dim support (Story 5.2)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(params=[64, 96, 128], ids=["dim64", "dim96", "dim128"], scope="module")
+def tq4_quantizer_multi(request: pytest.FixtureRequest) -> TurboQuantMSE:
+    """Quantizer at various head_dims for kernel validation."""
+    return TurboQuantMSE(request.param, 4, seed=42)
+
+
+def _compress(x: torch.Tensor, q: TurboQuantMSE) -> tuple[torch.Tensor, torch.Tensor]:
+    """Compress using a specific quantizer (not hardwired to conftest dim=128)."""
+    rot_t = q.rotation.T.contiguous()
+    return tq4_compress(
+        x,
+        rot_t[:, 0::2].contiguous(),
+        rot_t[:, 1::2].contiguous(),
+        q.codebook.boundaries.clone(),
+    )
+
+
+def _decompress(
+    packed: torch.Tensor,
+    norms: torch.Tensor,
+    q: TurboQuantMSE,
+    dtype: torch.dtype = torch.float32,
+) -> torch.Tensor:
+    """Decompress using a specific quantizer, applying inverse rotation."""
+    rotated = tq4_decompress(packed, norms, q.codebook.centroids.clone(), dtype=dtype)
+    return (rotated.float() @ q.rotation).to(dtype)
+
+
+@pytest.mark.unit
+class TestMultiDimSupport:
+    """Validate TQ4 compress/decompress and nibble packing at head_dim 64, 96, 128."""
+
+    def test_compress_decompress_roundtrip(
+        self, tq4_quantizer_multi: TurboQuantMSE
+    ) -> None:
+        """Compress-decompress roundtrip quality at various head_dims."""
+        dim = tq4_quantizer_multi.rotation.shape[0]
+        x = torch.randn(2, 4, dim)
+        packed, norms = _compress(x, tq4_quantizer_multi)
+        assert packed.shape == (2, 4, dim // 2)
+        assert packed.dtype == torch.uint8
+        x_hat = _decompress(packed, norms, tq4_quantizer_multi)
+        assert x_hat.shape == x.shape
+        cos = cosine_similarity_flat(x, x_hat)
+        assert cos > 0.80, f"Roundtrip cosine {cos:.4f} < 0.80 at head_dim={dim}"
+
+    def test_nibble_pack_unpack_bit_exact(
+        self, tq4_quantizer_multi: TurboQuantMSE
+    ) -> None:
+        """Pack then unpack must be bit-exact at HALF_D=32, 48, and 64."""
+        dim = tq4_quantizer_multi.rotation.shape[0]
+        indices = torch.randint(0, 16, (2, 4, 8, dim), dtype=torch.uint8)
+        packed = CompressedDynamicCache._nibble_pack(indices)
+        assert packed.shape == (2, 4, 8, dim // 2)
+        unpacked = CompressedDynamicCache._nibble_unpack(packed)
+        assert unpacked.shape == (2, 4, 8, dim)
+        torch.testing.assert_close(unpacked, indices.long())
+
+    def test_codebook_cache_entries(self, tq4_quantizer_multi: TurboQuantMSE) -> None:
+        """@lru_cache generates and caches codebook for each new dim."""
+        from turboquant_vllm.lloyd_max import _solve_lloyd_max_cached, solve_lloyd_max
+
+        dim = tq4_quantizer_multi.rotation.shape[0]
+        # Should hit cache — quantizer __init__ already called solve_lloyd_max
+        centroids, boundaries = solve_lloyd_max(dim, 4)
+        assert centroids.shape == (16,)
+        assert boundaries.shape == (15,)
+        info = _solve_lloyd_max_cached.cache_info()
+        assert info.hits > 0, "Codebook should be served from cache"
+        assert info.currsize <= 32, f"Cache has {info.currsize} entries, max is 32"

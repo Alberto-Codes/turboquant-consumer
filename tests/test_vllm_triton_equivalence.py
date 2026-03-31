@@ -11,7 +11,8 @@ import pytest
 
 vllm = pytest.importorskip("vllm", reason="vLLM not installed")
 
-import torch  # noqa: E402
+import torch  # noqa: E402, I001
+
 
 pytestmark = [pytest.mark.unit]
 

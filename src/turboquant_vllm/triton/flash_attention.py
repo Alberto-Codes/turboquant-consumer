@@ -8,6 +8,7 @@ Supports:
     - Grouped-Query Attention (GQA) with arbitrary Q/KV head ratios
     - Causal and non-causal modes
     - Optional additive attention mask (HF-compatible)
+    - Non-power-of-two HEAD_DIM (e.g., 96) via padded tl.arange + masking
     - fp32 online softmax accumulation for numerical stability
     - RTX 4090 (SM89) and AMD ROCm via Triton HIP backend
 
@@ -44,6 +45,19 @@ import math
 import torch
 import triton
 import triton.language as tl
+
+
+def _next_pow2(n: int) -> int:
+    """Round up to the nearest power of two (for Triton tl.arange).
+
+    Args:
+        n: The number to round up.
+
+    Returns:
+        The smallest power of two >= ``n``.
+    """
+    return 1 << (n - 1).bit_length() if n > 0 else 1
+
 
 # ---------------------------------------------------------------------------
 # Autotune configuration space
@@ -99,6 +113,7 @@ def _fwd_kernel(
     N_CTX_Q,
     N_CTX_KV,
     HEAD_DIM: tl.constexpr,
+    HEAD_DIM_PAD: tl.constexpr,
     BLOCK_M: tl.constexpr,
     BLOCK_N: tl.constexpr,
     IS_CAUSAL: tl.constexpr,
@@ -110,6 +125,9 @@ def _fwd_kernel(
     Each CTA loads one Q tile and streams K/V tiles through it.
     Autotuned on ``(N_CTX_Q, HEAD_DIM)`` — KV length excluded to avoid
     re-autotuning on every decode step.
+
+    Supports non-power-of-two head dimensions (e.g. 96) by padding
+    ``tl.arange`` to the next power of two and masking out-of-bounds lanes.
     """
     # -- Program indices --
     start_m = tl.program_id(0)
@@ -126,19 +144,20 @@ def _fwd_kernel(
     v_base = V + off_z * stride_vz + off_h_kv * stride_vh
     o_base = Out + off_z * stride_oz + off_h_q * stride_oh
 
-    # -- Block offsets --
+    # -- Block offsets (pad HEAD_DIM for non-power-of-two dims) --
     offs_m = start_m * BLOCK_M + tl.arange(0, BLOCK_M)
     offs_n = tl.arange(0, BLOCK_N)
-    offs_d = tl.arange(0, HEAD_DIM)
+    offs_d = tl.arange(0, HEAD_DIM_PAD)
+    d_mask = offs_d < HEAD_DIM
 
-    # -- Load Q tile [BLOCK_M, HEAD_DIM] (stays in registers) --
+    # -- Load Q tile [BLOCK_M, HEAD_DIM_PAD] (stays in registers) --
     q_ptrs = q_base + offs_m[:, None] * stride_qm + offs_d[None, :] * stride_qk
-    q = tl.load(q_ptrs, mask=offs_m[:, None] < N_CTX_Q, other=0.0)
+    q = tl.load(q_ptrs, mask=(offs_m[:, None] < N_CTX_Q) & d_mask[None, :], other=0.0)
 
     # -- fp32 online softmax state --
     m_i = tl.zeros([BLOCK_M], dtype=tl.float32) - float("inf")
     l_i = tl.zeros([BLOCK_M], dtype=tl.float32) + 1.0
-    acc = tl.zeros([BLOCK_M, HEAD_DIM], dtype=tl.float32)
+    acc = tl.zeros([BLOCK_M, HEAD_DIM_PAD], dtype=tl.float32)
 
     # Pre-multiply scale by log2(e) so we can use exp2 (single PTX instr)
     qk_scale = sm_scale * 1.44269504  # log2(e)
@@ -157,13 +176,13 @@ def _fwd_kernel(
     for start_n in range(0, hi, BLOCK_N):
         kv_valid = (start_n + offs_n) < N_CTX_KV
 
-        # -- Load K tile [BLOCK_N, HEAD_DIM] and transpose --
+        # -- Load K tile [BLOCK_N, HEAD_DIM_PAD] and transpose --
         k_ptrs = (
             k_base
             + (start_n + offs_n[:, None]) * stride_kn
             + offs_d[None, :] * stride_kk
         )
-        k = tl.load(k_ptrs, mask=kv_valid[:, None], other=0.0)
+        k = tl.load(k_ptrs, mask=kv_valid[:, None] & d_mask[None, :], other=0.0)
 
         # Q @ K^T -> [BLOCK_M, BLOCK_N] (fp32 via Tensor Core accumulation)
         qk = tl.dot(q, tl.trans(k))
@@ -200,13 +219,13 @@ def _fwd_kernel(
         # Rescale prior accumulated output
         acc = acc * alpha[:, None]
 
-        # -- Load V tile [BLOCK_N, HEAD_DIM] --
+        # -- Load V tile [BLOCK_N, HEAD_DIM_PAD] --
         v_ptrs = (
             v_base
             + (start_n + offs_n[:, None]) * stride_vn
             + offs_d[None, :] * stride_vk
         )
-        v = tl.load(v_ptrs, mask=kv_valid[:, None], other=0.0)
+        v = tl.load(v_ptrs, mask=kv_valid[:, None] & d_mask[None, :], other=0.0)
 
         # Accumulate P @ V (fp16/bf16 matmul into fp32 accumulator)
         l_ij = tl.sum(p, 1)
@@ -221,7 +240,11 @@ def _fwd_kernel(
     acc = acc / l_i[:, None]
 
     o_ptrs = o_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_ok
-    tl.store(o_ptrs, acc.to(Q.dtype.element_ty), mask=offs_m[:, None] < N_CTX_Q)
+    tl.store(
+        o_ptrs,
+        acc.to(Q.dtype.element_ty),
+        mask=(offs_m[:, None] < N_CTX_Q) & d_mask[None, :],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -238,6 +261,9 @@ def triton_flash_attention(
     attention_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Compute scaled dot-product attention using Triton Flash Attention.
+
+    Non-power-of-two head dimensions (e.g., 96) are supported via padded
+    tile loads and boundary masking inside the kernel.
 
     Args:
         q: Query tensor ``[batch, num_q_heads, seq_q, head_dim]``.
@@ -321,6 +347,7 @@ def triton_flash_attention(
         N_Q,
         N_KV,
         HEAD_DIM=D,
+        HEAD_DIM_PAD=_next_pow2(D),
         IS_CAUSAL=is_causal,
         HAS_MASK=has_mask,
     )

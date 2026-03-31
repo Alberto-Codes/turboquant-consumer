@@ -3,7 +3,8 @@
 Phase 2 of the P5 roadmap. Replaces the standard K tile load with:
 nibble unpack -> centroid gather -> interleave -> norm scale. The query
 is pre-rotated by ``Pi^T`` outside the kernel. Values remain standard
-fp16/bf16.
+fp16/bf16. Non-power-of-two HEAD_DIM (e.g., 96) is supported via padded
+tl.arange + masking.
 
 The fp32 online softmax ``(m_i, l_i, acc)`` state machine prevents the
 0.023/layer cosine drift that killed the Q@K^T-only kernel (Key Lesson #7).
@@ -40,6 +41,19 @@ import math
 import torch
 import triton
 import triton.language as tl
+
+
+def _next_pow2(n: int) -> int:
+    """Round up to the nearest power of two (for Triton tl.arange).
+
+    Args:
+        n: The number to round up.
+
+    Returns:
+        The smallest power of two >= ``n``.
+    """
+    return 1 << (n - 1).bit_length() if n > 0 else 1
+
 
 # ---------------------------------------------------------------------------
 # Autotune configuration space
@@ -93,6 +107,8 @@ def _fwd_tq4_kernel(
     N_CTX_Q,
     N_CTX_KV,
     HEAD_DIM: tl.constexpr,
+    HEAD_DIM_PAD: tl.constexpr,
+    HALF_D_PAD: tl.constexpr,
     BLOCK_M: tl.constexpr,
     BLOCK_N: tl.constexpr,
     IS_CAUSAL: tl.constexpr,
@@ -102,6 +118,9 @@ def _fwd_tq4_kernel(
     K tiles are decompressed inline from nibble-packed uint8 indices via
     centroid gather. V tiles are loaded as standard fp16/bf16. Online
     softmax maintained in fp32 throughout.
+
+    Supports non-power-of-two head dimensions (e.g. 96) by padding
+    ``tl.arange`` to the next power of two and masking out-of-bounds lanes.
 
     Autotuned on ``(N_CTX_Q, HEAD_DIM)`` to avoid per-decode-step retuning.
     """
@@ -121,20 +140,22 @@ def _fwd_tq4_kernel(
     v_base = V + off_z * stride_vz + off_h_kv * stride_vh
     o_base = Out + off_z * stride_oz + off_h_q * stride_oh
 
-    # -- Block offsets --
+    # -- Block offsets (pad HEAD_DIM/HALF_D for non-power-of-two dims) --
     offs_m = start_m * BLOCK_M + tl.arange(0, BLOCK_M)
     offs_n = tl.arange(0, BLOCK_N)
-    offs_d = tl.arange(0, HEAD_DIM)
-    offs_d_half = tl.arange(0, HALF_D)
+    offs_d = tl.arange(0, HEAD_DIM_PAD)
+    d_mask = offs_d < HEAD_DIM
+    offs_d_half = tl.arange(0, HALF_D_PAD)
+    d_half_mask = offs_d_half < HALF_D
 
-    # -- Load Q_rot tile [BLOCK_M, HEAD_DIM] --
+    # -- Load Q_rot tile [BLOCK_M, HEAD_DIM_PAD] --
     q_ptrs = q_base + offs_m[:, None] * stride_qm + offs_d[None, :] * stride_qk
-    q = tl.load(q_ptrs, mask=offs_m[:, None] < N_CTX_Q, other=0.0)
+    q = tl.load(q_ptrs, mask=(offs_m[:, None] < N_CTX_Q) & d_mask[None, :], other=0.0)
 
     # -- fp32 online softmax state --
     m_i = tl.zeros([BLOCK_M], dtype=tl.float32) - float("inf")
     l_i = tl.zeros([BLOCK_M], dtype=tl.float32) + 1.0
-    acc = tl.zeros([BLOCK_M, HEAD_DIM], dtype=tl.float32)
+    acc = tl.zeros([BLOCK_M, HEAD_DIM_PAD], dtype=tl.float32)
 
     qk_scale = sm_scale * 1.44269504
 
@@ -149,24 +170,28 @@ def _fwd_tq4_kernel(
         kv_valid = (start_n + offs_n) < N_CTX_KV
 
         # -- TQ4 K decompression --
-        # Load nibble-packed indices: [BLOCK_N, HALF_D] uint8
+        # Load nibble-packed indices: [BLOCK_N, HALF_D_PAD] uint8
         kp_ptrs = (
             kp_base
             + (start_n + offs_n[:, None]) * stride_kpn
             + offs_d_half[None, :] * stride_kpd
         )
-        packed = tl.load(kp_ptrs, mask=kv_valid[:, None], other=0)
+        packed = tl.load(
+            kp_ptrs, mask=kv_valid[:, None] & d_half_mask[None, :], other=0
+        )
 
         # Nibble unpack: two 4-bit indices per byte
         hi_idx = (packed >> 4).to(tl.int32)
         lo_idx = (packed & 0x0F).to(tl.int32)
 
-        # Centroid gather: [BLOCK_N, HALF_D] fp32
+        # Centroid gather: [BLOCK_N, HALF_D_PAD] fp32
         k_hi = tl.load(Centroids + hi_idx)
         k_lo = tl.load(Centroids + lo_idx)
 
-        # Interleave to [BLOCK_N, HEAD_DIM]: even=hi, odd=lo
-        k = tl.join(k_hi, k_lo).reshape(BLOCK_N, HEAD_DIM)
+        # Interleave to [BLOCK_N, HEAD_DIM_PAD]: even=hi, odd=lo
+        k = tl.join(k_hi, k_lo).reshape(BLOCK_N, HEAD_DIM_PAD)
+        # Zero padded lanes so they don't contribute to dot products
+        k = tl.where(d_mask[None, :], k, 0.0)
 
         # Load norms: [BLOCK_N] fp32
         kn_ptrs = kn_base + (start_n + offs_n) * stride_knn
@@ -200,7 +225,7 @@ def _fwd_tq4_kernel(
             + (start_n + offs_n[:, None]) * stride_vn
             + offs_d[None, :] * stride_vk
         )
-        v = tl.load(v_ptrs, mask=kv_valid[:, None], other=0.0)
+        v = tl.load(v_ptrs, mask=kv_valid[:, None] & d_mask[None, :], other=0.0)
 
         # P @ V
         l_ij = tl.sum(p, 1)
@@ -213,7 +238,11 @@ def _fwd_tq4_kernel(
     # -- Epilogue --
     acc = acc / l_i[:, None]
     o_ptrs = o_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_ok
-    tl.store(o_ptrs, acc.to(Q_rot.dtype.element_ty), mask=offs_m[:, None] < N_CTX_Q)
+    tl.store(
+        o_ptrs,
+        acc.to(Q_rot.dtype.element_ty),
+        mask=(offs_m[:, None] < N_CTX_Q) & d_mask[None, :],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -235,6 +264,10 @@ def triton_flash_attention_tq4(
 
     Pre-rotates Q by ``rotation^T``, then launches the fused kernel that
     decompresses nibble-packed K indices inline via centroid gather.
+    Non-power-of-two head dimensions (e.g., 96) are handled via padded
+    tile loads and boundary masking inside the kernel.  Non-pow2 dims incur
+    ~5-15 % throughput penalty due to wasted lanes in padded tiles (e.g.,
+    head_dim=96 pads to 128, wasting 25 % of memory bandwidth on K/V loads).
 
     Args:
         q: Query ``[batch, H_Q, seq_q, head_dim]`` fp16/bf16.
@@ -252,6 +285,7 @@ def triton_flash_attention_tq4(
     B, H_Q, N_Q, D = q.shape
     _, H_KV, N_KV, HALF_D = k_packed.shape
 
+    assert D % 2 == 0, f"HEAD_DIM must be even, got {D}"
     assert HALF_D == D // 2, f"Packed dim {HALF_D} != head_dim//2 ({D // 2})"
     assert H_Q % H_KV == 0, f"Q heads ({H_Q}) must be divisible by KV heads ({H_KV})"
     assert k_packed.dtype == torch.uint8, "k_packed must be uint8"
@@ -281,6 +315,13 @@ def triton_flash_attention_tq4(
         """
         return (triton.cdiv(N_Q, META["BLOCK_M"]), B * H_Q)
 
+    HEAD_DIM_PAD = _next_pow2(D)
+    HALF_D_PAD = _next_pow2(D // 2)
+    assert HALF_D_PAD * 2 == HEAD_DIM_PAD, (
+        f"Padding invariant violated: 2*HALF_D_PAD ({2 * HALF_D_PAD}) "
+        f"!= HEAD_DIM_PAD ({HEAD_DIM_PAD}) — tl.join reshape requires this"
+    )
+
     _fwd_tq4_kernel[grid](
         q_rot,
         k_packed,
@@ -299,6 +340,8 @@ def triton_flash_attention_tq4(
         N_Q,
         N_KV,
         HEAD_DIM=D,
+        HEAD_DIM_PAD=HEAD_DIM_PAD,
+        HALF_D_PAD=HALF_D_PAD,
         IS_CAUSAL=is_causal,
     )
 
