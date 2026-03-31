@@ -65,13 +65,30 @@ def _detect_model_config(model: Any) -> dict[str, int]:
 
     Returns:
         Dict with head_dim, num_heads, num_kv_heads, num_layers.
+
+    Raises:
+        ValueError: If ``head_dim`` is explicit but non-positive, or if
+            ``num_attention_heads`` is 0 with no explicit ``head_dim``.
     """
     config = model.config
     # Molmo2 wraps a text config inside the main config
     text_config = getattr(config, "text_config", config)
     hidden_size = text_config.hidden_size
     num_heads = text_config.num_attention_heads
-    head_dim = getattr(text_config, "head_dim", None) or hidden_size // num_heads
+    raw_head_dim = getattr(text_config, "head_dim", None)
+    if raw_head_dim is not None:
+        if raw_head_dim <= 0:
+            msg = f"Model config has head_dim={raw_head_dim}; head_dim must be positive"
+            raise ValueError(msg)
+        head_dim = raw_head_dim
+    elif num_heads == 0:
+        msg = (
+            "Model config has num_attention_heads=0 and no explicit head_dim; "
+            "cannot compute head_dim"
+        )
+        raise ValueError(msg)
+    else:
+        head_dim = hidden_size // num_heads
     num_kv_heads = getattr(text_config, "num_key_value_heads", num_heads)
     num_layers = text_config.num_hidden_layers
     return {

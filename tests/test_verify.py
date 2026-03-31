@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gc
 import json
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -11,6 +12,7 @@ import torch
 from turboquant_vllm.verify import (
     COMPRESSION_QUALITY_THRESHOLD,
     VALIDATED_MODELS,
+    _detect_model_config,
     _format_human_summary,
     _run_verification,
     main,
@@ -375,6 +377,74 @@ class TestVerifyThreshold:
         with pytest.raises(SystemExit) as exc_info:
             main(["--model", "test/m", "--bits", "4"])
         assert exc_info.value.code == 0
+
+
+class TestDetectModelConfig:
+    """Tests for _detect_model_config head_dim resolution and division guard."""
+
+    @staticmethod
+    def _cfg(
+        *,
+        head_dim: int | None = 128,
+        num_heads: int = 8,
+        hidden_size: int = 1024,
+        num_kv_heads: int = 8,
+        num_layers: int = 32,
+        has_head_dim: bool = True,
+    ) -> SimpleNamespace:
+        attrs: dict = {
+            "hidden_size": hidden_size,
+            "num_attention_heads": num_heads,
+            "num_key_value_heads": num_kv_heads,
+            "num_hidden_layers": num_layers,
+        }
+        if has_head_dim:
+            attrs["head_dim"] = head_dim
+        return SimpleNamespace(config=SimpleNamespace(**attrs))
+
+    def test_explicit_head_dim(self) -> None:
+        result = _detect_model_config(self._cfg(head_dim=128))
+        assert result["head_dim"] == 128
+
+    def test_head_dim_none_falls_back(self) -> None:
+        result = _detect_model_config(
+            self._cfg(head_dim=None, hidden_size=1024, num_heads=8)
+        )
+        assert result["head_dim"] == 128
+
+    def test_num_heads_zero_with_explicit_head_dim(self) -> None:
+        result = _detect_model_config(self._cfg(head_dim=128, num_heads=0))
+        assert result["head_dim"] == 128
+
+    def test_num_heads_zero_without_head_dim_raises(self) -> None:
+        with pytest.raises(ValueError, match="num_attention_heads=0"):
+            _detect_model_config(self._cfg(head_dim=None, num_heads=0))
+
+    def test_explicit_head_dim_zero_raises(self) -> None:
+        with pytest.raises(ValueError, match="head_dim=0"):
+            _detect_model_config(self._cfg(head_dim=0))
+
+    def test_explicit_head_dim_negative_raises(self) -> None:
+        with pytest.raises(ValueError, match="head_dim=-1"):
+            _detect_model_config(self._cfg(head_dim=-1))
+
+    def test_head_dim_absent_falls_back(self) -> None:
+        result = _detect_model_config(
+            self._cfg(has_head_dim=False, hidden_size=1024, num_heads=8)
+        )
+        assert result["head_dim"] == 128
+
+    def test_vlm_nested_text_config(self) -> None:
+        text_cfg = SimpleNamespace(
+            hidden_size=1024,
+            num_attention_heads=8,
+            head_dim=128,
+            num_key_value_heads=8,
+            num_hidden_layers=32,
+        )
+        model = SimpleNamespace(config=SimpleNamespace(text_config=text_cfg))
+        result = _detect_model_config(model)
+        assert result["head_dim"] == 128
 
 
 @pytest.mark.gpu
