@@ -206,7 +206,8 @@ def _detect_model_config(model: Any) -> dict[str, int]:
 
     Handles both VLMs (nested ``text_config``) and text-only models
     (params on root config). Falls back to ``hidden_size // num_heads``
-    when ``head_dim`` is absent or ``None``.
+    when ``head_dim`` is absent or ``None`` and ``num_attention_heads``
+    is positive.
 
     Args:
         model: A loaded HuggingFace model.

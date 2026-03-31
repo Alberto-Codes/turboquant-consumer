@@ -58,7 +58,8 @@ def _detect_model_config(model: Any) -> dict[str, int]:
     """Extract KV cache parameters from a model's config.
 
     Handles both VLMs (``text_config`` wrapper) and text-only models.
-    Falls back to ``hidden_size // num_heads`` when ``head_dim`` is ``None``.
+    Falls back to ``hidden_size // num_heads`` when ``head_dim`` is
+    absent or ``None`` and ``num_attention_heads`` is positive.
 
     Args:
         model: A loaded HuggingFace model.
