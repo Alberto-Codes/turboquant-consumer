@@ -3,7 +3,8 @@
 Phase 3 of the P5 roadmap. Both K and V tiles are decompressed inline
 from nibble-packed uint8 indices. The query is pre-rotated by ``Pi^T``
 and the output is post-rotated by ``Pi`` outside the kernel (since K and
-V share the same rotation matrix).
+V share the same rotation matrix). Non-power-of-two HEAD_DIM (e.g., 96)
+is supported via padded tl.arange + masking.
 
 Attributes:
     triton_flash_attention_tq4_kv: Python wrapper that pre-rotates Q,
@@ -38,6 +39,19 @@ import math
 import torch
 import triton
 import triton.language as tl
+
+
+def _next_pow2(n: int) -> int:
+    """Round up to the nearest power of two (for Triton tl.arange).
+
+    Args:
+        n: The number to round up.
+
+    Returns:
+        The smallest power of two >= ``n``.
+    """
+    return 1 << (n - 1).bit_length() if n > 0 else 1
+
 
 # ---------------------------------------------------------------------------
 # Autotune
@@ -95,6 +109,8 @@ def _fwd_tq4_kv_kernel(
     N_CTX_Q,
     N_CTX_KV,
     HEAD_DIM: tl.constexpr,
+    HEAD_DIM_PAD: tl.constexpr,
+    HALF_D_PAD: tl.constexpr,
     BLOCK_M: tl.constexpr,
     BLOCK_N: tl.constexpr,
     IS_CAUSAL: tl.constexpr,
@@ -104,6 +120,9 @@ def _fwd_tq4_kv_kernel(
     Both K and V tiles decompressed inline from nibble-packed indices.
     Output is in rotated space (caller applies post-rotation ``@ Pi``).
     Autotuned on ``(N_CTX_Q, HEAD_DIM)``.
+
+    Supports non-power-of-two head dimensions (e.g. 96) by padding
+    ``tl.arange`` to the next power of two and masking out-of-bounds lanes.
     """
     HALF_D: tl.constexpr = HEAD_DIM // 2
 
@@ -121,20 +140,22 @@ def _fwd_tq4_kv_kernel(
     vn_base = V_norms + off_z * stride_vnz + off_h_kv * stride_vnh
     o_base = Out + off_z * stride_oz + off_h_q * stride_oh
 
-    # Block offsets
+    # Block offsets (pad HEAD_DIM/HALF_D for non-power-of-two dims)
     offs_m = start_m * BLOCK_M + tl.arange(0, BLOCK_M)
     offs_n = tl.arange(0, BLOCK_N)
-    offs_d = tl.arange(0, HEAD_DIM)
-    offs_d_half = tl.arange(0, HALF_D)
+    offs_d = tl.arange(0, HEAD_DIM_PAD)
+    d_mask = offs_d < HEAD_DIM
+    offs_d_half = tl.arange(0, HALF_D_PAD)
+    d_half_mask = offs_d_half < HALF_D
 
     # Load Q_rot tile
     q_ptrs = q_base + offs_m[:, None] * stride_qm + offs_d[None, :] * stride_qk
-    q = tl.load(q_ptrs, mask=offs_m[:, None] < N_CTX_Q, other=0.0)
+    q = tl.load(q_ptrs, mask=(offs_m[:, None] < N_CTX_Q) & d_mask[None, :], other=0.0)
 
     # fp32 online softmax state
     m_i = tl.zeros([BLOCK_M], dtype=tl.float32) - float("inf")
     l_i = tl.zeros([BLOCK_M], dtype=tl.float32) + 1.0
-    acc = tl.zeros([BLOCK_M, HEAD_DIM], dtype=tl.float32)
+    acc = tl.zeros([BLOCK_M, HEAD_DIM_PAD], dtype=tl.float32)
 
     qk_scale = sm_scale * 1.44269504
 
@@ -153,12 +174,16 @@ def _fwd_tq4_kv_kernel(
             + (start_n + offs_n[:, None]) * stride_kpn
             + offs_d_half[None, :] * stride_kpd
         )
-        k_packed = tl.load(kp_ptrs, mask=kv_valid[:, None], other=0)
+        k_packed = tl.load(
+            kp_ptrs, mask=kv_valid[:, None] & d_half_mask[None, :], other=0
+        )
         k_hi = (k_packed >> 4).to(tl.int32)
         k_lo = (k_packed & 0x0F).to(tl.int32)
         k = tl.join(tl.load(Centroids + k_hi), tl.load(Centroids + k_lo)).reshape(
-            BLOCK_N, HEAD_DIM
+            BLOCK_N, HEAD_DIM_PAD
         )
+        # Zero padded lanes so they don't contribute to dot products
+        k = tl.where(d_mask[None, :], k, 0.0)
         kn_ptrs = kn_base + (start_n + offs_n) * stride_knn
         k_norms = tl.load(kn_ptrs, mask=kv_valid, other=0.0)
         k = (k * k_norms[:, None]).to(Q_rot.dtype.element_ty)
@@ -185,12 +210,16 @@ def _fwd_tq4_kv_kernel(
             + (start_n + offs_n[:, None]) * stride_vpn
             + offs_d_half[None, :] * stride_vpd
         )
-        v_packed = tl.load(vp_ptrs, mask=kv_valid[:, None], other=0)
+        v_packed = tl.load(
+            vp_ptrs, mask=kv_valid[:, None] & d_half_mask[None, :], other=0
+        )
         v_hi = (v_packed >> 4).to(tl.int32)
         v_lo = (v_packed & 0x0F).to(tl.int32)
         v = tl.join(tl.load(Centroids + v_hi), tl.load(Centroids + v_lo)).reshape(
-            BLOCK_N, HEAD_DIM
+            BLOCK_N, HEAD_DIM_PAD
         )
+        # Zero padded lanes so they don't contribute to dot products
+        v = tl.where(d_mask[None, :], v, 0.0)
         vn_ptrs = vn_base + (start_n + offs_n) * stride_vnn
         v_norms = tl.load(vn_ptrs, mask=kv_valid, other=0.0)
         v = (v * v_norms[:, None]).to(Q_rot.dtype.element_ty)
@@ -206,7 +235,11 @@ def _fwd_tq4_kv_kernel(
     # Epilogue (output is in rotated space -- caller post-rotates)
     acc = acc / l_i[:, None]
     o_ptrs = o_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_ok
-    tl.store(o_ptrs, acc.to(Q_rot.dtype.element_ty), mask=offs_m[:, None] < N_CTX_Q)
+    tl.store(
+        o_ptrs,
+        acc.to(Q_rot.dtype.element_ty),
+        mask=(offs_m[:, None] < N_CTX_Q) & d_mask[None, :],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -229,7 +262,9 @@ def triton_flash_attention_tq4_kv(
 
     Pre-rotates Q by ``rotation^T``, launches the kernel that decompresses
     both K and V inline, then post-rotates the output by ``rotation`` to
-    return to the original coordinate space.
+    return to the original coordinate space. Non-power-of-two head
+    dimensions (e.g., 96) are handled via padded tile loads and boundary
+    masking inside the kernel.
 
     Args:
         q: Query ``[batch, H_Q, seq_q, head_dim]`` fp16/bf16.
@@ -300,6 +335,8 @@ def triton_flash_attention_tq4_kv(
         N_Q,
         N_KV,
         HEAD_DIM=D,
+        HEAD_DIM_PAD=_next_pow2(D),
+        HALF_D_PAD=_next_pow2(D // 2),
         IS_CAUSAL=is_causal,
     )
 

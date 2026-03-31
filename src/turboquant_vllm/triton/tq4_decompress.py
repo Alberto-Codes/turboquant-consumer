@@ -4,7 +4,8 @@ Phase 3c.8: Replaces the multi-op PyTorch decompress path with a single
 fused kernel that performs nibble unpack -> centroid gather -> norm scale
 -> dtype cast in one launch.  The rotation is **not** applied here -- the
 caller pre-rotates Q by ``Pi^T`` and post-rotates the attention output
-by ``Pi``, saving O(cache_len) matmuls per decode step.
+by ``Pi``, saving O(cache_len) matmuls per decode step.  Non-power-of-two
+HEAD_DIM (e.g., 96) is supported via padded tl.arange + masking.
 
 Experiment 015 showed that at cache_len=4096 on RTX 4090, decompress
 accounts for 68% of decode time.  The rotation matmul (128x128) is the
@@ -47,6 +48,7 @@ def _tq4_decompress_kernel(
     Out,
     M,
     HALF_D: tl.constexpr,
+    HALF_D_PAD: tl.constexpr,
 ):
     """Fused TQ4 decompress: unpack + gather + scale + cast.
 
@@ -55,6 +57,9 @@ def _tq4_decompress_kernel(
     gathers centroids, multiplies by the fp32 norm, and writes ``D``
     output values in the target dtype.
 
+    Supports non-power-of-two head dimensions (e.g. 96) by padding
+    ``tl.arange`` to the next power of two and masking out-of-bounds lanes.
+
     Args:
         Packed (tl.pointer_type): ``(M, HALF_D)`` uint8 packed indices.
         Norms (tl.pointer_type): ``(M,)`` fp32 per-vector norms.
@@ -62,22 +67,24 @@ def _tq4_decompress_kernel(
         Out (tl.pointer_type): ``(M, D)`` output buffer in target dtype.
         M (int): Total rows (N * H).
         HALF_D (tl.constexpr): ``D // 2`` for compile-time tiling.
+        HALF_D_PAD (tl.constexpr): Next power of two >= HALF_D.
     """
     row = tl.program_id(0)
     if row >= M:
         return
 
-    # Load HALF_D packed bytes
-    p_offs = tl.arange(0, HALF_D)
-    packed = tl.load(Packed + row * HALF_D + p_offs)
+    # Load HALF_D packed bytes (padded range for non-pow2 dims)
+    p_offs = tl.arange(0, HALF_D_PAD)
+    p_mask = p_offs < HALF_D
+    packed = tl.load(Packed + row * HALF_D + p_offs, mask=p_mask, other=0)
 
     # Nibble unpack -> two index streams
     hi_idx = ((packed >> 4) & 0x0F).to(tl.int32)
     lo_idx = (packed & 0x0F).to(tl.int32)
 
     # Centroid gather (16-entry table, L1-cached)
-    c_hi = tl.load(Centroids + hi_idx)  # (HALF_D,) fp32
-    c_lo = tl.load(Centroids + lo_idx)  # (HALF_D,) fp32
+    c_hi = tl.load(Centroids + hi_idx)  # (HALF_D_PAD,) fp32
+    c_lo = tl.load(Centroids + lo_idx)  # (HALF_D_PAD,) fp32
 
     # Load norm and scale
     norm = tl.load(Norms + row)
@@ -88,8 +95,27 @@ def _tq4_decompress_kernel(
     # This matches the pack convention: packed[i] = (idx[2i] << 4) | idx[2i+1]
     D: tl.constexpr = HALF_D * 2
     out_base = row * D
-    tl.store(Out + out_base + p_offs * 2, c_hi.to(Out.dtype.element_ty))
-    tl.store(Out + out_base + p_offs * 2 + 1, c_lo.to(Out.dtype.element_ty))
+    tl.store(Out + out_base + p_offs * 2, c_hi.to(Out.dtype.element_ty), mask=p_mask)
+    tl.store(
+        Out + out_base + p_offs * 2 + 1, c_lo.to(Out.dtype.element_ty), mask=p_mask
+    )
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _next_pow2(n: int) -> int:
+    """Round up to the nearest power of two (for Triton tl.arange).
+
+    Args:
+        n: The number to round up.
+
+    Returns:
+        The smallest power of two >= ``n``.
+    """
+    return 1 << (n - 1).bit_length() if n > 0 else 1
 
 
 # ---------------------------------------------------------------------------
@@ -108,7 +134,8 @@ def tq4_decompress(
 
     Fused Triton path: unpack + centroid gather + norm scale + cast in a
     single kernel launch.  Does **not** apply the rotation matrix --
-    output remains in rotated space.
+    output remains in rotated space.  Non-power-of-two head dimensions
+    (e.g., 96) are supported via padded tile loads and boundary masking.
 
     Args:
         packed: ``(N, H, D//2)`` uint8 -- nibble-packed centroid indices.
@@ -147,6 +174,7 @@ def tq4_decompress(
         out,
         M,
         HALF_D=half_D,  # ty: ignore[invalid-argument-type]
+        HALF_D_PAD=_next_pow2(half_D),  # ty: ignore[invalid-argument-type]
     )
 
     if caller_out is not None:

@@ -3,7 +3,8 @@
 Phase 3c.9: Replaces the multi-op PyTorch compress path with a single
 fused kernel.  The rotation matrix is pre-split into even/odd column
 halves so the kernel writes packed nibble output directly without a
-separate interleave step.
+separate interleave step.  Non-power-of-two HEAD_DIM (e.g., 96) is
+supported via padded tl.arange + masking.
 
 Experiment 015 (post-3c.8) showed compress accounts for 53% of decode
 time (~0.149ms for K+V at 1 token).  The PyTorch path launches 6+
@@ -55,6 +56,8 @@ def _tq4_compress_kernel(
     HALF_D: tl.constexpr,
     N_BOUND: tl.constexpr,
     BLOCK_K: tl.constexpr,
+    D_PAD: tl.constexpr,
+    HALF_D_PAD: tl.constexpr,
 ):
     """Fused TQ4 compress: norm + normalize + rotate + bucketize + pack.
 
@@ -62,6 +65,9 @@ def _tq4_compress_kernel(
     norm, normalizes, tiles the rotation matmul using pre-split even/odd
     column halves, performs a linear-scan bucketize against 15 boundaries,
     and writes one ``HALF_D``-byte packed uint8 row plus one fp32 norm.
+
+    Supports non-power-of-two head dimensions (e.g. 96) by padding
+    ``tl.arange`` to the next power of two and masking out-of-bounds lanes.
 
     Args:
         X (tl.pointer_type): ``(M, D)`` fp16 input vectors.
@@ -78,45 +84,57 @@ def _tq4_compress_kernel(
         HALF_D (tl.constexpr): ``D // 2``.
         N_BOUND (tl.constexpr): Number of boundaries (15 for TQ4).
         BLOCK_K (tl.constexpr): Tile size for rotation matmul.
+        D_PAD (tl.constexpr): Next power of two >= D.
+        HALF_D_PAD (tl.constexpr): Next power of two >= HALF_D.
     """
     row = tl.program_id(0)
     if row >= M:
         return
 
-    d_offs = tl.arange(0, D)
-    half_offs = tl.arange(0, HALF_D)
+    d_offs = tl.arange(0, D_PAD)
+    d_mask = d_offs < D
+    half_offs = tl.arange(0, HALF_D_PAD)
+    half_mask = half_offs < HALF_D
 
     # Step 1: Load input and compute norm
-    x = tl.load(X + row * D + d_offs).to(tl.float32)
+    x = tl.load(X + row * D + d_offs, mask=d_mask, other=0.0).to(tl.float32)
     norm = tl.sqrt(tl.sum(x * x))
     inv_norm = 1.0 / (norm + 1e-10)
 
     # Step 2: Tiled rotation with even/odd output split
     # result_even[j] = sum_k x_hat[k] * R^T[k, 2j]
     # result_odd[j]  = sum_k x_hat[k] * R^T[k, 2j+1]
-    rotated_even = tl.zeros([HALF_D], dtype=tl.float32)
-    rotated_odd = tl.zeros([HALF_D], dtype=tl.float32)
+    rotated_even = tl.zeros([HALF_D_PAD], dtype=tl.float32)
+    rotated_odd = tl.zeros([HALF_D_PAD], dtype=tl.float32)
 
     for k_start in range(0, D, BLOCK_K):
         k_offs = k_start + tl.arange(0, BLOCK_K)
+        k_mask = k_offs < D
 
         # Re-load chunk and normalize (avoids register gather)
-        x_chunk = tl.load(X + row * D + k_offs).to(tl.float32) * inv_norm
+        x_chunk = (
+            tl.load(X + row * D + k_offs, mask=k_mask, other=0.0).to(tl.float32)
+            * inv_norm
+        )
 
         # Load pre-split rotation tiles (contiguous memory)
         re = tl.load(
             Rot_T_even + k_offs[:, None] * HALF_D + half_offs[None, :],
+            mask=k_mask[:, None] & half_mask[None, :],
+            other=0.0,
         )
         ro = tl.load(
             Rot_T_odd + k_offs[:, None] * HALF_D + half_offs[None, :],
+            mask=k_mask[:, None] & half_mask[None, :],
+            other=0.0,
         )
 
         rotated_even += tl.sum(x_chunk[:, None] * re, axis=0)
         rotated_odd += tl.sum(x_chunk[:, None] * ro, axis=0)
 
     # Step 3: Bucketize (linear scan over sorted boundaries)
-    idx_even = tl.zeros([HALF_D], dtype=tl.int32)
-    idx_odd = tl.zeros([HALF_D], dtype=tl.int32)
+    idx_even = tl.zeros([HALF_D_PAD], dtype=tl.int32)
+    idx_odd = tl.zeros([HALF_D_PAD], dtype=tl.int32)
     for b in range(N_BOUND):
         boundary = tl.load(Boundaries + b)
         idx_even += (rotated_even >= boundary).to(tl.int32)
@@ -126,8 +144,25 @@ def _tq4_compress_kernel(
     packed = ((idx_even & 0xF) << 4) | (idx_odd & 0xF)
 
     # Step 5: Store packed indices and norm
-    tl.store(Packed_out + row * HALF_D + half_offs, packed.to(tl.uint8))
+    tl.store(Packed_out + row * HALF_D + half_offs, packed.to(tl.uint8), mask=half_mask)
     tl.store(Norms_out + row, norm)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _next_pow2(n: int) -> int:
+    """Round up to the nearest power of two (for Triton tl.arange).
+
+    Args:
+        n: The number to round up.
+
+    Returns:
+        The smallest power of two >= ``n``.
+    """
+    return 1 << (n - 1).bit_length() if n > 0 else 1
 
 
 # ---------------------------------------------------------------------------
@@ -145,7 +180,9 @@ def tq4_compress(
     """Compress vectors to TQ4 nibble-packed format.
 
     Fused Triton path: norm + normalize + tiled rotation + bucketize +
-    nibble-pack in a single kernel launch.
+    nibble-pack in a single kernel launch. Non-power-of-two head
+    dimensions (e.g., 96) are supported via padded tile loads and
+    boundary masking inside the kernel.
 
     Args:
         x: ``(N, H, D)`` fp16/bf16 input vectors.
@@ -177,6 +214,8 @@ def tq4_compress(
 
     N_BOUND = boundaries.shape[0]
     BLOCK_K = min(32, D)
+    D_PAD = _next_pow2(D)
+    HALF_D_PAD = _next_pow2(HALF_D)
 
     grid = (M,)
     _tq4_compress_kernel[grid](
@@ -191,6 +230,8 @@ def tq4_compress(
         HALF_D=HALF_D,  # ty: ignore[invalid-argument-type]
         N_BOUND=N_BOUND,  # ty: ignore[invalid-argument-type]
         BLOCK_K=BLOCK_K,  # ty: ignore[invalid-argument-type]
+        D_PAD=D_PAD,  # ty: ignore[invalid-argument-type]
+        HALF_D_PAD=HALF_D_PAD,  # ty: ignore[invalid-argument-type]
     )
 
     if out is not None:
