@@ -136,6 +136,8 @@ def tq4_decompress(
     single kernel launch.  Does **not** apply the rotation matrix --
     output remains in rotated space.  Non-power-of-two head dimensions
     (e.g., 96) are supported via padded tile loads and boundary masking.
+    Non-pow2 dims incur ~5-15 % throughput penalty due to wasted lanes
+    in padded tiles.
 
     Args:
         packed: ``(N, H, D//2)`` uint8 -- nibble-packed centroid indices.

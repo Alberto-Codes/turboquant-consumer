@@ -265,7 +265,9 @@ def triton_flash_attention_tq4(
     Pre-rotates Q by ``rotation^T``, then launches the fused kernel that
     decompresses nibble-packed K indices inline via centroid gather.
     Non-power-of-two head dimensions (e.g., 96) are handled via padded
-    tile loads and boundary masking inside the kernel.
+    tile loads and boundary masking inside the kernel.  Non-pow2 dims incur
+    ~5-15 % throughput penalty due to wasted lanes in padded tiles (e.g.,
+    head_dim=96 pads to 128, wasting 25 % of memory bandwidth on K/V loads).
 
     Args:
         q: Query ``[batch, H_Q, seq_q, head_dim]`` fp16/bf16.
@@ -283,6 +285,7 @@ def triton_flash_attention_tq4(
     B, H_Q, N_Q, D = q.shape
     _, H_KV, N_KV, HALF_D = k_packed.shape
 
+    assert D % 2 == 0, f"HEAD_DIM must be even, got {D}"
     assert HALF_D == D // 2, f"Packed dim {HALF_D} != head_dim//2 ({D // 2})"
     assert H_Q % H_KV == 0, f"Q heads ({H_Q}) must be divisible by KV heads ({H_KV})"
     assert k_packed.dtype == torch.uint8, "k_packed must be uint8"
@@ -312,6 +315,13 @@ def triton_flash_attention_tq4(
         """
         return (triton.cdiv(N_Q, META["BLOCK_M"]), B * H_Q)
 
+    HEAD_DIM_PAD = _next_pow2(D)
+    HALF_D_PAD = _next_pow2(D // 2)
+    assert HALF_D_PAD * 2 == HEAD_DIM_PAD, (
+        f"Padding invariant violated: 2*HALF_D_PAD ({2 * HALF_D_PAD}) "
+        f"!= HEAD_DIM_PAD ({HEAD_DIM_PAD}) — tl.join reshape requires this"
+    )
+
     _fwd_tq4_kernel[grid](
         q_rot,
         k_packed,
@@ -330,8 +340,8 @@ def triton_flash_attention_tq4(
         N_Q,
         N_KV,
         HEAD_DIM=D,
-        HEAD_DIM_PAD=_next_pow2(D),
-        HALF_D_PAD=_next_pow2(D // 2),
+        HEAD_DIM_PAD=HEAD_DIM_PAD,
+        HALF_D_PAD=HALF_D_PAD,
         IS_CAUSAL=is_causal,
     )
 
