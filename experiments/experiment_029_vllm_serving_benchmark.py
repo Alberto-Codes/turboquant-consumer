@@ -94,7 +94,7 @@ class VRAMMonitor:
     def start(self) -> None:
         """Begin background VRAM polling."""
         self._running = True
-        self._peak = _get_vram_mib()
+        self._peak = max(0, _get_vram_mib())
         self._thread = threading.Thread(target=self._poll, daemon=True)
         self._thread.start()
 
@@ -240,7 +240,7 @@ def _wait_for_health(base_url: str, timeout_s: int = HEALTH_TIMEOUT_S) -> None:
                 models = [m["id"] for m in resp.json()["data"]]
                 print(f"[server] Ready — serving: {models}")
                 return
-        except requests.RequestException:
+        except (requests.RequestException, KeyError, ValueError):
             pass
         time.sleep(2)
     raise TimeoutError(f"Server not ready after {timeout_s}s")

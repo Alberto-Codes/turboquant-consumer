@@ -45,10 +45,12 @@ baseline venv.
 
 | Metric | Molmo2-4B TQ4 | Molmo2-4B Base | Ratio | Llama-8B TQ4 | Llama-8B Base | Ratio |
 |--------|--------------|----------------|-------|-------------|---------------|-------|
-| Output throughput (tok/s) | 1,232 | 1,747 | **0.71** | 967 | 1,042 | **0.93** |
-| TTFT p50 (ms) | 4,172 | 2,987 | 1.40 | 6,977 | 9,324 | **0.75** |
-| TPOT p50 (ms) | 127 | 44 | **2.87** | 144 | 48 | **3.02** |
-| Peak VRAM (MiB) | 23,984 | 20,242 | +3,742 | 24,018 | 22,387 | +1,631 |
+| Output throughput (tok/s) | 1,232 (1,224–1,233) | 1,747 (1,720–1,754) | **0.71** | 967 (941–967) | 1,042 (1,040–1,043) | **0.93** |
+| TTFT p50 (ms) | 4,172 (4,167–4,218) | 2,987 (2,985–2,989) | 1.40 | 6,977 (6,956–7,733) | 9,324 (9,224–9,374) | **0.75** |
+| TPOT p50 (ms) | 127 (127–127) | 44 (44–44) | **2.87** | 144 (144–144) | 48 (48–48) | **3.02** |
+| Peak VRAM (MiB) | 23,972 | 19,883 | +4,089 | 24,018 | 22,244 | +1,774 |
+
+*Values are medians across 3 independent runs. Parenthesized ranges are P25–P75.*
 
 ### TQ4 vs Baseline — Latency Sweep
 
@@ -56,37 +58,39 @@ baseline venv.
 
 | QPS | TQ4 | Baseline | Ratio |
 |-----|-----|----------|-------|
-| 1 | 123 | 125 | 0.98 |
-| 2 | 222 | 247 | 0.90 |
-| 4 | 437 | 470 | 0.93 |
-| 8 | 726 | 891 | 0.82 |
-| 16 | 1,046 | 1,473 | 0.71 |
+| 1 | 123 (123–123) | 125 (125–125) | 0.98 |
+| 2 | 236 (236–237) | 245 (245–247) | 0.96 |
+| 4 | 437 (436–438) | 470 (468–474) | 0.93 |
+| 8 | 745 (744–776) | 898 (880–899) | 0.83 |
+| 16 | 1,046 (1,044–1,057) | 1,472 (1,450–1,502) | 0.71 |
 
 **Molmo2-4B — TPOT p50 (ms)**
 
 | QPS | TQ4 | Baseline | Ratio |
 |-----|-----|----------|-------|
-| 1 | 31 | 15 | 2.03 |
-| 4 | 34 | 16 | 2.08 |
-| 16 | 50 | 26 | 1.95 |
+| 1 | 31 (31–31) | 15 (15–16) | 2.03 |
+| 4 | 34 (34–34) | 16 (16–17) | 2.08 |
+| 16 | 50 (49–50) | 26 (25–26) | 1.95 |
 
 **Llama-3.1-8B — Throughput (tok/s)**
 
 | QPS | TQ4 | Baseline | Ratio |
 |-----|-----|----------|-------|
-| 1 | 122 | 125 | 0.98 |
-| 2 | 225 | 246 | 0.91 |
-| 4 | 430 | 463 | 0.93 |
-| 8 | 727 | 818 | 0.89 |
-| 16 | 994 | 1,001 | 0.99 |
+| 1 | 122 (122–122) | 125 (125–125) | 0.98 |
+| 2 | 234 (234–234) | 243 (243–243) | 0.97 |
+| 4 | 430 (430–431) | 463 (461–464) | 0.93 |
+| 8 | 727 (724–727) | 818 (817–822) | 0.89 |
+| 16 | 994 (989–1,005) | 1,001 (999–1,003) | 0.99 |
 
 **Llama-3.1-8B — TPOT p50 (ms)**
 
 | QPS | TQ4 | Baseline | Ratio |
 |-----|-----|----------|-------|
-| 1 | 36 | 20 | 1.81 |
-| 4 | 38 | 25 | 1.53 |
-| 16 | 54 | 46 | 1.16 |
+| 1 | 36 (36–36) | 20 (20–20) | 1.81 |
+| 4 | 38 (38–38) | 25 (24–25) | 1.53 |
+| 16 | 54 (54–54) | 46 (46–46) | 1.16 |
+
+*Values are medians across 3 independent runs. Parenthesized ranges are P25–P75.*
 
 ### Offline Throughput (Layer 1)
 
@@ -102,9 +106,11 @@ baseline offline omitted for consistency).
 
 | Metric | Decompress-All (eager) | Fused (eager) | Fused/Decomp Ratio |
 |--------|----------------------|---------------|-------------------|
-| Output throughput (tok/s) | 967 | 941 | 0.97 |
-| TTFT p50 (ms) | 6,977 | 7,114 | 1.02 |
-| TPOT p50 (ms) | 144 | 147 | 1.03 |
+| Output throughput (tok/s) | 967 (941–967) | 941 (940–953) | 0.97 |
+| TTFT p50 (ms) | 6,977 (6,956–7,733) | 7,114 (7,028–7,175) | 1.02 |
+| TPOT p50 (ms) | 144 (144–144) | 147 (146–148) | 1.03 |
+
+*Values are medians across 3 independent runs. Parenthesized ranges are P25–P75.*
 
 **Fused + CUDA Graphs: BLOCKED.** Server crashes during CUDA graph capture:
 `cudaErrorStreamCaptureUnsupported`. The Triton-based fused paged decode kernel
@@ -134,7 +140,7 @@ dominates kernel execution time.
 3. **VRAM: TQ4 uses MORE, not less**, on this 24 GiB GPU. TQ4's compressed
    blocks allow 3.76x more KV blocks in the same pool, but the decompression
    buffers, rotation matrices, and codebooks add fixed overhead. Net VRAM is
-   +1.6 to +3.7 GiB above baseline. The compression benefit manifests as
+   +1.8 to +4.1 GiB above baseline. The compression benefit manifests as
    **capacity** (more sequences/longer context) not as memory savings at fixed
    workload.
 
