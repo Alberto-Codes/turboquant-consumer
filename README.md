@@ -6,7 +6,7 @@
 
 # turboquant-vllm
 
-TurboQuant KV cache compression as a drop-in vLLM plugin. **3.76x KV cache compression with asymmetric K/V support, validated across 8 model families.**
+TurboQuant KV cache compression as a drop-in vLLM plugin. **3.76x KV cache compression with asymmetric K/V support, validated across 8 models.**
 
 > Implements Google's [TurboQuant](https://arxiv.org/abs/2504.19874) (ICLR 2026) — the first KV cache quantization method with provably near-optimal distortion rates.
 
@@ -68,7 +68,7 @@ Validate any model yourself with the verify CLI:
 
 ```bash
 python -m turboquant_vllm.verify --model meta-llama/Llama-3.1-8B --bits 4
-python -m turboquant_vllm.verify --model meta-llama/Llama-3.1-8B --k-bits 4 --v-bits 3
+python -m turboquant_vllm.verify --model meta-llama/Llama-3.1-8B --k-bits 4 --v-bits 3 --threshold 0.97
 ```
 
 ## Serving Performance
