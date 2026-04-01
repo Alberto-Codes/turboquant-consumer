@@ -1,0 +1,1587 @@
+{
+  "experiment": "029-vllm-serving-benchmarks",
+  "date": "2026-04-01 09:10:58",
+  "tag": "llama-8b-tq4",
+  "model": "meta-llama/Llama-3.1-8B-Instruct",
+  "config": {
+    "attention_backend": "CUSTOM",
+    "enforce_eager": true,
+    "gpu_memory_utilization": 0.85,
+    "max_model_len": 4096,
+    "max_num_batched_tokens": null,
+    "trust_remote_code": false,
+    "vllm_binary": "vllm",
+    "runs": 3,
+    "tq4_use_fused_paged": "0",
+    "tq4_k_bits": null,
+    "tq4_v_bits": null
+  },
+  "layer1_offline": {
+    "runs": [
+      {
+        "error": "to-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n(EngineCore pid=561682)     return self._call_impl(*args, **kwargs)\n(EngineCore pid=561682)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n(EngineCore pid=561682)   File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n(EngineCore pid=561682)     return forward_call(*args, **kwargs)\n(EngineCore pid=561682)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n(EngineCore pid=561682)   File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/model_executor/custom_op.py\", line 135, in forward\n(EngineCore pid=561682)     return self._forward_method(*args, **kwargs)\n(EngineCore pid=561682)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n(EngineCore pid=561682)   File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/model_executor/layers/activation.py\", line 146, in forward_cuda\n(EngineCore pid=561682)     out = torch.empty(output_shape, dtype=x.dtype, device=x.device)\n(EngineCore pid=561682)           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n(EngineCore pid=561682) torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 224.00 MiB. GPU 0 has a total capacity of 23.52 GiB of which 154.25 MiB is free. Process 4569 has 156.34 MiB memory in use. Including non-PyTorch memory, this process has 22.23 GiB memory in use. Of the allocated memory 21.31 GiB is allocated by PyTorch, and 453.42 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)\n\nProcessed prompts:   0%|          | 0/200 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]\n",
+        "run_id": 1
+      },
+      {
+        "error": "^^^^^^^^^^^^^^\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/entrypoints/llm.py\", line 1818, in _run_completion\n    self._add_completion_requests(\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/entrypoints/llm.py\", line 1791, in _add_completion_requests\n    return self._render_and_add_requests(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/entrypoints/llm.py\", line 1931, in _render_and_add_requests\n    raise e\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/entrypoints/llm.py\", line 1918, in _render_and_add_requests\n    request_id = self._add_request(\n                 ^^^^^^^^^^^^^^^^^^\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/entrypoints/llm.py\", line 1948, in _add_request\n    return self.llm_engine.add_request(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/v1/engine/llm_engine.py\", line 274, in add_request\n    self.engine_core.add_request(request)\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py\", line 850, in add_request\n    self._send_input(EngineCoreRequestType.ADD, request)\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py\", line 823, in _send_input\n    self.ensure_alive()\n  File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py\", line 664, in ensure_alive\n    raise EngineDeadError()\nvllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause.\n\nRendering prompts:  92%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f| 184/200 [00:00<00:00, 198.01it/s]\n",
+        "run_id": 2
+      },
+      {
+        "error": "to-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n(EngineCore pid=566227)     return self._call_impl(*args, **kwargs)\n(EngineCore pid=566227)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n(EngineCore pid=566227)   File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n(EngineCore pid=566227)     return forward_call(*args, **kwargs)\n(EngineCore pid=566227)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n(EngineCore pid=566227)   File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/model_executor/custom_op.py\", line 135, in forward\n(EngineCore pid=566227)     return self._forward_method(*args, **kwargs)\n(EngineCore pid=566227)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n(EngineCore pid=566227)   File \"/var/home/Alberto-Codes/Projects/turboquant-vllm/.venv/lib/python3.12/site-packages/vllm/model_executor/layers/activation.py\", line 146, in forward_cuda\n(EngineCore pid=566227)     out = torch.empty(output_shape, dtype=x.dtype, device=x.device)\n(EngineCore pid=566227)           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n(EngineCore pid=566227) torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 224.00 MiB. GPU 0 has a total capacity of 23.52 GiB of which 158.25 MiB is free. Process 4569 has 156.34 MiB memory in use. Including non-PyTorch memory, this process has 22.22 GiB memory in use. Of the allocated memory 21.31 GiB is allocated by PyTorch, and 449.42 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)\n\nProcessed prompts:   0%|          | 0/200 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]\n",
+        "run_id": 3
+      }
+    ],
+    "aggregate": {
+      "n_runs": 3,
+      "n_ok": 0,
+      "elapsed_time": {
+        "median": NaN,
+        "p25": NaN,
+        "p75": NaN,
+        "n": 0,
+        "raw": []
+      },
+      "num_requests": {
+        "median": NaN,
+        "p25": NaN,
+        "p75": NaN,
+        "n": 0,
+        "raw": []
+      },
+      "total_num_tokens": {
+        "median": NaN,
+        "p25": NaN,
+        "p75": NaN,
+        "n": 0,
+        "raw": []
+      },
+      "requests_per_second": {
+        "median": NaN,
+        "p25": NaN,
+        "p75": NaN,
+        "n": 0,
+        "raw": []
+      },
+      "output_tokens_per_second": {
+        "median": NaN,
+        "p25": NaN,
+        "p75": NaN,
+        "n": 0,
+        "raw": []
+      },
+      "total_tokens_per_second": {
+        "median": NaN,
+        "p25": NaN,
+        "p75": NaN,
+        "n": 0,
+        "raw": []
+      },
+      "peak_vram_mib": {
+        "median": NaN,
+        "p25": NaN,
+        "p75": NaN,
+        "n": 0,
+        "raw": []
+      }
+    }
+  },
+  "layer2_saturation": {
+    "runs": [
+      {
+        "date": "20260401-091543",
+        "endpoint_type": "openai-chat",
+        "backend": "openai-chat",
+        "label": null,
+        "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+        "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+        "num_prompts": 200,
+        "request_rate": "inf",
+        "burstiness": 1.0,
+        "max_concurrency": null,
+        "duration": 27.961895117994573,
+        "completed": 200,
+        "failed": 0,
+        "total_input_tokens": 102200,
+        "total_output_tokens": 25600,
+        "request_throughput": 7.15259102274839,
+        "request_goodput": null,
+        "output_throughput": 915.5316509117939,
+        "total_token_throughput": 4570.505663536221,
+        "max_output_tokens_per_s": 2000.0,
+        "max_concurrent_requests": 200,
+        "rtfx": 0.0,
+        "mean_ttft_ms": 8362.462238710032,
+        "median_ttft_ms": 8489.876191495568,
+        "std_ttft_ms": 4679.705957283551,
+        "p25_ttft_ms": 4869.286604998706,
+        "p50_ttft_ms": 8489.876191495568,
+        "p75_ttft_ms": 12193.628806251581,
+        "p99_ttft_ms": 16255.919953901393,
+        "mean_tpot_ms": 143.1253506107071,
+        "median_tpot_ms": 143.62114390552432,
+        "std_tpot_ms": 28.863944232649015,
+        "p25_tpot_ms": 120.12885381695888,
+        "p50_tpot_ms": 143.62114390552432,
+        "p75_tpot_ms": 163.8333609625845,
+        "p99_tpot_ms": 188.88159724084926,
+        "mean_itl_ms": 142.02932604403097,
+        "median_itl_ms": 106.97354399962933,
+        "std_itl_ms": 101.0542068941668,
+        "p25_itl_ms": 102.26602400143747,
+        "p50_itl_ms": 106.97354399962933,
+        "p75_itl_ms": 136.14456375034933,
+        "p99_itl_ms": 343.6716954529402,
+        "run_id": 1,
+        "wall_time_s": 42.42
+      },
+      {
+        "date": "20260401-092129",
+        "endpoint_type": "openai-chat",
+        "backend": "openai-chat",
+        "label": null,
+        "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+        "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+        "num_prompts": 200,
+        "request_rate": "inf",
+        "burstiness": 1.0,
+        "max_concurrency": null,
+        "duration": 26.45005841799866,
+        "completed": 200,
+        "failed": 0,
+        "total_input_tokens": 102200,
+        "total_output_tokens": 25600,
+        "request_throughput": 7.561419972664581,
+        "request_goodput": null,
+        "output_throughput": 967.8617565010663,
+        "total_token_throughput": 4831.747362532667,
+        "max_output_tokens_per_s": 2000.0,
+        "max_concurrent_requests": 200,
+        "rtfx": 0.0,
+        "mean_ttft_ms": 7126.531035205044,
+        "median_ttft_ms": 6934.127800501301,
+        "std_ttft_ms": 4246.951793685702,
+        "p25_ttft_ms": 3327.1960455022054,
+        "p50_ttft_ms": 6934.127800501301,
+        "p75_ttft_ms": 10692.914510000264,
+        "p99_ttft_ms": 14725.619046151769,
+        "mean_tpot_ms": 140.529356797641,
+        "median_tpot_ms": 143.63031524803452,
+        "std_tpot_ms": 24.896710866322493,
+        "p25_tpot_ms": 120.55532363383536,
+        "p50_tpot_ms": 143.63031524803452,
+        "p75_tpot_ms": 162.8535013031241,
+        "p99_tpot_ms": 175.6285621772522,
+        "mean_itl_ms": 139.4314197478522,
+        "median_itl_ms": 107.00048400030937,
+        "std_itl_ms": 77.85041933313516,
+        "p25_itl_ms": 101.7911160033691,
+        "p50_itl_ms": 107.00048400030937,
+        "p75_itl_ms": 131.38066324790998,
+        "p99_itl_ms": 329.96120888681617,
+        "run_id": 2,
+        "wall_time_s": 39.09
+      },
+      {
+        "date": "20260401-092716",
+        "endpoint_type": "openai-chat",
+        "backend": "openai-chat",
+        "label": null,
+        "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+        "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+        "num_prompts": 200,
+        "request_rate": "inf",
+        "burstiness": 1.0,
+        "max_concurrency": null,
+        "duration": 26.48235958800069,
+        "completed": 200,
+        "failed": 0,
+        "total_input_tokens": 102200,
+        "total_output_tokens": 25600,
+        "request_throughput": 7.552197127125377,
+        "request_goodput": null,
+        "output_throughput": 966.6812322720483,
+        "total_token_throughput": 4825.853964233116,
+        "max_output_tokens_per_s": 2000.0,
+        "max_concurrent_requests": 200,
+        "rtfx": 0.0,
+        "mean_ttft_ms": 7170.4868056751,
+        "median_ttft_ms": 6976.913710004737,
+        "std_ttft_ms": 4262.467936744178,
+        "p25_ttft_ms": 3338.5508695027966,
+        "p50_ttft_ms": 6976.913710004737,
+        "p75_ttft_ms": 10758.520229001078,
+        "p99_ttft_ms": 14830.920006129672,
+        "mean_tpot_ms": 140.71826646000272,
+        "median_tpot_ms": 144.08066195670028,
+        "std_tpot_ms": 25.23667157350489,
+        "p25_tpot_ms": 120.30311368896689,
+        "p50_tpot_ms": 144.08066195670028,
+        "p75_tpot_ms": 163.50226704727947,
+        "p99_tpot_ms": 176.2545866173158,
+        "mean_itl_ms": 139.61884874168135,
+        "median_itl_ms": 107.01659000187647,
+        "std_itl_ms": 78.68306275807589,
+        "p25_itl_ms": 101.57047024767962,
+        "p50_itl_ms": 107.01659000187647,
+        "p75_itl_ms": 127.37995399584179,
+        "p99_itl_ms": 340.12299140929827,
+        "run_id": 3,
+        "wall_time_s": 39.01
+      }
+    ],
+    "aggregate": {
+      "n_runs": 3,
+      "n_ok": 3,
+      "request_throughput": {
+        "median": 7.552,
+        "p25": 7.352,
+        "p75": 7.557,
+        "n": 3,
+        "raw": [
+          7.153,
+          7.561,
+          7.552
+        ]
+      },
+      "output_throughput": {
+        "median": 966.681,
+        "p25": 941.106,
+        "p75": 967.271,
+        "n": 3,
+        "raw": [
+          915.532,
+          967.862,
+          966.681
+        ]
+      },
+      "total_token_throughput": {
+        "median": 4825.854,
+        "p25": 4698.18,
+        "p75": 4828.801,
+        "n": 3,
+        "raw": [
+          4570.506,
+          4831.747,
+          4825.854
+        ]
+      },
+      "mean_ttft_ms": {
+        "median": 7170.487,
+        "p25": 7148.509,
+        "p75": 7766.475,
+        "n": 3,
+        "raw": [
+          8362.462,
+          7126.531,
+          7170.487
+        ]
+      },
+      "median_ttft_ms": {
+        "median": 6976.914,
+        "p25": 6955.521,
+        "p75": 7733.395,
+        "n": 3,
+        "raw": [
+          8489.876,
+          6934.128,
+          6976.914
+        ]
+      },
+      "mean_tpot_ms": {
+        "median": 140.718,
+        "p25": 140.624,
+        "p75": 141.922,
+        "n": 3,
+        "raw": [
+          143.125,
+          140.529,
+          140.718
+        ]
+      },
+      "median_tpot_ms": {
+        "median": 143.63,
+        "p25": 143.626,
+        "p75": 143.855,
+        "n": 3,
+        "raw": [
+          143.621,
+          143.63,
+          144.081
+        ]
+      },
+      "mean_itl_ms": {
+        "median": 139.619,
+        "p25": 139.525,
+        "p75": 140.824,
+        "n": 3,
+        "raw": [
+          142.029,
+          139.431,
+          139.619
+        ]
+      },
+      "median_itl_ms": {
+        "median": 107.0,
+        "p25": 106.987,
+        "p75": 107.009,
+        "n": 3,
+        "raw": [
+          106.974,
+          107.0,
+          107.017
+        ]
+      }
+    }
+  },
+  "layer3_sweep": {
+    "rate_1": {
+      "runs": [
+        {
+          "date": "20260401-091739",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "1",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 104.56276462599635,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 0.9563633895649507,
+          "request_goodput": null,
+          "output_throughput": 122.41451386431369,
+          "total_token_throughput": 611.1162059320035,
+          "max_output_tokens_per_s": 317.0,
+          "max_concurrent_requests": 13,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 119.63672679958108,
+          "median_ttft_ms": 112.08479549895856,
+          "std_ttft_ms": 47.65238717651265,
+          "p25_ttft_ms": 89.88204724846582,
+          "p50_ttft_ms": 112.08479549895856,
+          "p75_ttft_ms": 134.55229450119077,
+          "p99_ttft_ms": 332.8413196474867,
+          "mean_tpot_ms": 36.04624151740387,
+          "median_tpot_ms": 36.402027566910824,
+          "std_tpot_ms": 1.4354167536691462,
+          "p25_tpot_ms": 35.10030215157734,
+          "p50_tpot_ms": 36.402027566910824,
+          "p75_tpot_ms": 37.18329329333175,
+          "p99_tpot_ms": 38.069337635163215,
+          "mean_itl_ms": 35.76455535172272,
+          "median_itl_ms": 31.96452349948231,
+          "std_itl_ms": 13.871236677478258,
+          "p25_itl_ms": 30.517799001245294,
+          "p50_itl_ms": 31.96452349948231,
+          "p75_itl_ms": 36.76442499818222,
+          "p99_itl_ms": 109.01815782446647,
+          "run_id": 1,
+          "wall_time_s": 116.2
+        },
+        {
+          "date": "20260401-092325",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "1",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 104.48910088300181,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 0.957037615932514,
+          "request_goodput": null,
+          "output_throughput": 122.5008148393618,
+          "total_token_throughput": 611.5470365808765,
+          "max_output_tokens_per_s": 310.0,
+          "max_concurrent_requests": 14,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 119.54907565021131,
+          "median_ttft_ms": 107.59335449984064,
+          "std_ttft_ms": 50.10581133732053,
+          "p25_ttft_ms": 89.12633650106727,
+          "p50_ttft_ms": 107.59335449984064,
+          "p75_ttft_ms": 129.23535800109676,
+          "p99_ttft_ms": 317.0104384134902,
+          "mean_tpot_ms": 35.945537488424165,
+          "median_tpot_ms": 36.38897723622925,
+          "std_tpot_ms": 1.2632980197913553,
+          "p25_tpot_ms": 35.13900411219472,
+          "p50_tpot_ms": 36.38897723622925,
+          "p75_tpot_ms": 36.82526330312684,
+          "p99_tpot_ms": 37.628570017186,
+          "mean_itl_ms": 35.66464186281337,
+          "median_itl_ms": 31.967175003956072,
+          "std_itl_ms": 12.603061593669233,
+          "p25_itl_ms": 30.71666775213089,
+          "p50_itl_ms": 31.967175003956072,
+          "p75_itl_ms": 36.924057501892094,
+          "p99_itl_ms": 100.24987577846332,
+          "run_id": 2,
+          "wall_time_s": 116.05
+        },
+        {
+          "date": "20260401-092912",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "1",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 104.50748076000309,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 0.9568693003866936,
+          "request_goodput": null,
+          "output_throughput": 122.47927044949678,
+          "total_token_throughput": 611.4394829470972,
+          "max_output_tokens_per_s": 327.0,
+          "max_concurrent_requests": 14,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 117.64873408028507,
+          "median_ttft_ms": 110.53771850129124,
+          "std_ttft_ms": 42.084072909711445,
+          "p25_ttft_ms": 87.4679005046346,
+          "p50_ttft_ms": 110.53771850129124,
+          "p75_ttft_ms": 136.4285440013191,
+          "p99_ttft_ms": 281.336480109385,
+          "mean_tpot_ms": 36.1832116450404,
+          "median_tpot_ms": 36.46520683463406,
+          "std_tpot_ms": 1.462272203625038,
+          "p25_tpot_ms": 35.3878343051285,
+          "p50_tpot_ms": 36.46520683463406,
+          "p75_tpot_ms": 37.40655621457007,
+          "p99_tpot_ms": 38.299396589615974,
+          "mean_itl_ms": 35.90044487804448,
+          "median_itl_ms": 32.465152497024974,
+          "std_itl_ms": 13.255977858493338,
+          "p25_itl_ms": 30.671062750116107,
+          "p50_itl_ms": 32.465152497024974,
+          "p75_itl_ms": 36.858900250081206,
+          "p99_itl_ms": 102.0242935580609,
+          "run_id": 3,
+          "wall_time_s": 116.0
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 0.957,
+          "p25": 0.957,
+          "p75": 0.957,
+          "n": 3,
+          "raw": [
+            0.956,
+            0.957,
+            0.957
+          ]
+        },
+        "output_throughput": {
+          "median": 122.479,
+          "p25": 122.447,
+          "p75": 122.49,
+          "n": 3,
+          "raw": [
+            122.415,
+            122.501,
+            122.479
+          ]
+        },
+        "total_token_throughput": {
+          "median": 611.439,
+          "p25": 611.278,
+          "p75": 611.493,
+          "n": 3,
+          "raw": [
+            611.116,
+            611.547,
+            611.439
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 119.549,
+          "p25": 118.599,
+          "p75": 119.593,
+          "n": 3,
+          "raw": [
+            119.637,
+            119.549,
+            117.649
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 110.538,
+          "p25": 109.066,
+          "p75": 111.311,
+          "n": 3,
+          "raw": [
+            112.085,
+            107.593,
+            110.538
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 36.046,
+          "p25": 35.996,
+          "p75": 36.115,
+          "n": 3,
+          "raw": [
+            36.046,
+            35.946,
+            36.183
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 36.402,
+          "p25": 36.396,
+          "p75": 36.434,
+          "n": 3,
+          "raw": [
+            36.402,
+            36.389,
+            36.465
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 35.765,
+          "p25": 35.715,
+          "p75": 35.833,
+          "n": 3,
+          "raw": [
+            35.765,
+            35.665,
+            35.9
+          ]
+        },
+        "median_itl_ms": {
+          "median": 31.967,
+          "p25": 31.966,
+          "p75": 32.216,
+          "n": 3,
+          "raw": [
+            31.965,
+            31.967,
+            32.465
+          ]
+        }
+      }
+    },
+    "rate_2": {
+      "runs": [
+        {
+          "date": "20260401-091846",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "2",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 54.59683080200193,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 1.8316081452173456,
+          "request_goodput": null,
+          "output_throughput": 234.44584258782024,
+          "total_token_throughput": 1170.3976047938838,
+          "max_output_tokens_per_s": 454.0,
+          "max_concurrent_requests": 18,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 113.60379494013614,
+          "median_ttft_ms": 94.18560550329858,
+          "std_ttft_ms": 64.06645951815167,
+          "p25_ttft_ms": 84.17884374648565,
+          "p50_ttft_ms": 94.18560550329858,
+          "p75_ttft_ms": 107.84966449864442,
+          "p99_ttft_ms": 373.93434754929336,
+          "mean_tpot_ms": 36.42602267126139,
+          "median_tpot_ms": 36.66277797637172,
+          "std_tpot_ms": 0.8721062213456948,
+          "p25_tpot_ms": 36.304007312988745,
+          "p50_tpot_ms": 36.66277797637172,
+          "p75_tpot_ms": 36.98668224016843,
+          "p99_tpot_ms": 37.28839245189945,
+          "mean_itl_ms": 36.141376660235096,
+          "median_itl_ms": 33.29912399931345,
+          "std_itl_ms": 13.837962948208062,
+          "p25_itl_ms": 30.90079799949308,
+          "p50_itl_ms": 33.29912399931345,
+          "p75_itl_ms": 37.369639499956975,
+          "p99_itl_ms": 115.51409434025118,
+          "run_id": 1,
+          "wall_time_s": 66.71
+        },
+        {
+          "date": "20260401-092432",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "2",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 54.62260960000276,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 1.8307437292412874,
+          "request_goodput": null,
+          "output_throughput": 234.33519734288478,
+          "total_token_throughput": 1169.8452429851827,
+          "max_output_tokens_per_s": 416.0,
+          "max_concurrent_requests": 18,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 107.96000142989215,
+          "median_ttft_ms": 93.99706299882382,
+          "std_ttft_ms": 45.42796215941495,
+          "p25_ttft_ms": 85.62682474985195,
+          "p50_ttft_ms": 93.99706299882382,
+          "p75_ttft_ms": 106.72910799803503,
+          "p99_ttft_ms": 280.41811486407823,
+          "mean_tpot_ms": 36.05027619535555,
+          "median_tpot_ms": 36.400079594486876,
+          "std_tpot_ms": 1.0972576812480144,
+          "p25_tpot_ms": 35.82184899018976,
+          "p50_tpot_ms": 36.400079594486876,
+          "p75_tpot_ms": 36.87733390552597,
+          "p99_tpot_ms": 37.08189513757628,
+          "mean_itl_ms": 35.76857232734426,
+          "median_itl_ms": 32.83026599820005,
+          "std_itl_ms": 11.875029831497814,
+          "p25_itl_ms": 31.026758999360027,
+          "p50_itl_ms": 32.83026599820005,
+          "p75_itl_ms": 37.20609824813437,
+          "p99_itl_ms": 102.94575255102245,
+          "run_id": 2,
+          "wall_time_s": 66.63
+        },
+        {
+          "date": "20260401-093019",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "2",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 54.62662268200074,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 1.8306092357591348,
+          "request_goodput": null,
+          "output_throughput": 234.31798217716926,
+          "total_token_throughput": 1169.759301650087,
+          "max_output_tokens_per_s": 431.0,
+          "max_concurrent_requests": 18,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 111.5922313700139,
+          "median_ttft_ms": 94.44965499642421,
+          "std_ttft_ms": 55.38428974111927,
+          "p25_ttft_ms": 83.08510025017313,
+          "p50_ttft_ms": 94.44965499642421,
+          "p75_ttft_ms": 109.50349649465352,
+          "p99_ttft_ms": 317.7305316847196,
+          "mean_tpot_ms": 35.966283905745655,
+          "median_tpot_ms": 36.40181777166252,
+          "std_tpot_ms": 1.2042146398155344,
+          "p25_tpot_ms": 35.72003864563186,
+          "p50_tpot_ms": 36.40181777166252,
+          "p75_tpot_ms": 36.82125136811368,
+          "p99_tpot_ms": 37.232369147709754,
+          "mean_itl_ms": 35.68519831562128,
+          "median_itl_ms": 32.960649998130975,
+          "std_itl_ms": 12.140701177735538,
+          "p25_itl_ms": 30.968920749728568,
+          "p50_itl_ms": 32.960649998130975,
+          "p75_itl_ms": 37.206531000265386,
+          "p99_itl_ms": 99.81958170494181,
+          "run_id": 3,
+          "wall_time_s": 66.76
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 1.831,
+          "p25": 1.831,
+          "p75": 1.831,
+          "n": 3,
+          "raw": [
+            1.832,
+            1.831,
+            1.831
+          ]
+        },
+        "output_throughput": {
+          "median": 234.335,
+          "p25": 234.327,
+          "p75": 234.391,
+          "n": 3,
+          "raw": [
+            234.446,
+            234.335,
+            234.318
+          ]
+        },
+        "total_token_throughput": {
+          "median": 1169.845,
+          "p25": 1169.802,
+          "p75": 1170.121,
+          "n": 3,
+          "raw": [
+            1170.398,
+            1169.845,
+            1169.759
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 111.592,
+          "p25": 109.776,
+          "p75": 112.598,
+          "n": 3,
+          "raw": [
+            113.604,
+            107.96,
+            111.592
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 94.186,
+          "p25": 94.091,
+          "p75": 94.318,
+          "n": 3,
+          "raw": [
+            94.186,
+            93.997,
+            94.45
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 36.05,
+          "p25": 36.008,
+          "p75": 36.238,
+          "n": 3,
+          "raw": [
+            36.426,
+            36.05,
+            35.966
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 36.402,
+          "p25": 36.401,
+          "p75": 36.532,
+          "n": 3,
+          "raw": [
+            36.663,
+            36.4,
+            36.402
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 35.769,
+          "p25": 35.727,
+          "p75": 35.955,
+          "n": 3,
+          "raw": [
+            36.141,
+            35.769,
+            35.685
+          ]
+        },
+        "median_itl_ms": {
+          "median": 32.961,
+          "p25": 32.895,
+          "p75": 33.13,
+          "n": 3,
+          "raw": [
+            33.299,
+            32.83,
+            32.961
+          ]
+        }
+      }
+    },
+    "rate_4": {
+      "runs": [
+        {
+          "date": "20260401-091928",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "4",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 29.74273820000235,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 3.362165222568247,
+          "request_goodput": null,
+          "output_throughput": 430.3571484887356,
+          "total_token_throughput": 2148.4235772211096,
+          "max_output_tokens_per_s": 727.0,
+          "max_concurrent_requests": 32,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 112.84102029021597,
+          "median_ttft_ms": 97.66014750130125,
+          "std_ttft_ms": 51.35790741225263,
+          "p25_ttft_ms": 88.58787324788864,
+          "p50_ttft_ms": 97.66014750130125,
+          "p75_ttft_ms": 113.04316824862326,
+          "p99_ttft_ms": 382.363111216182,
+          "mean_tpot_ms": 37.56088178787027,
+          "median_tpot_ms": 38.023573248010074,
+          "std_tpot_ms": 1.2447226306956773,
+          "p25_tpot_ms": 37.15148277163774,
+          "p50_tpot_ms": 38.023573248010074,
+          "p75_tpot_ms": 38.54198784051911,
+          "p99_tpot_ms": 38.68969574921792,
+          "mean_itl_ms": 37.26737163460655,
+          "median_itl_ms": 35.16866549762199,
+          "std_itl_ms": 13.063174424352995,
+          "p25_itl_ms": 32.1415465004975,
+          "p50_itl_ms": 35.16866549762199,
+          "p75_itl_ms": 38.5960162475385,
+          "p99_itl_ms": 117.41063741406833,
+          "run_id": 1,
+          "wall_time_s": 42.11
+        },
+        {
+          "date": "20260401-092514",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "4",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 29.668911945998843,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 3.3705314229929497,
+          "request_goodput": null,
+          "output_throughput": 431.42802214309756,
+          "total_token_throughput": 2153.7695792924947,
+          "max_output_tokens_per_s": 781.0,
+          "max_concurrent_requests": 32,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 124.20629504005774,
+          "median_ttft_ms": 102.14595300203655,
+          "std_ttft_ms": 62.22523360812394,
+          "p25_ttft_ms": 93.18853824697726,
+          "p50_ttft_ms": 102.14595300203655,
+          "p75_ttft_ms": 121.37431449991709,
+          "p99_ttft_ms": 344.4381831019564,
+          "mean_tpot_ms": 37.26781131913434,
+          "median_tpot_ms": 37.56124927164684,
+          "std_tpot_ms": 1.2014561129635497,
+          "p25_tpot_ms": 36.343871427139156,
+          "p50_tpot_ms": 37.56124927164684,
+          "p75_tpot_ms": 38.33977987795968,
+          "p99_tpot_ms": 38.78990794901356,
+          "mean_itl_ms": 36.9765937298439,
+          "median_itl_ms": 34.99432349781273,
+          "std_itl_ms": 11.889035415245809,
+          "p25_itl_ms": 32.28705375295249,
+          "p50_itl_ms": 34.99432349781273,
+          "p75_itl_ms": 38.54843950102804,
+          "p99_itl_ms": 103.26837240281748,
+          "run_id": 2,
+          "wall_time_s": 41.97
+        },
+        {
+          "date": "20260401-093101",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "4",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 29.74071398199885,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 3.362394058882613,
+          "request_goodput": null,
+          "output_throughput": 430.3864395369745,
+          "total_token_throughput": 2148.5698036259896,
+          "max_output_tokens_per_s": 744.0,
+          "max_concurrent_requests": 32,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 114.57843410957139,
+          "median_ttft_ms": 100.143121999281,
+          "std_ttft_ms": 49.28610903375222,
+          "p25_ttft_ms": 89.81542675064702,
+          "p50_ttft_ms": 100.143121999281,
+          "p75_ttft_ms": 116.83156925209914,
+          "p99_ttft_ms": 290.87508103410084,
+          "mean_tpot_ms": 37.441736387718976,
+          "median_tpot_ms": 37.76299534643396,
+          "std_tpot_ms": 1.1186499110434223,
+          "p25_tpot_ms": 36.77730560040914,
+          "p50_tpot_ms": 37.76299534643396,
+          "p75_tpot_ms": 38.175131171262514,
+          "p99_tpot_ms": 39.01098103311009,
+          "mean_itl_ms": 37.14915571414224,
+          "median_itl_ms": 34.93347549738246,
+          "std_itl_ms": 12.20112690238603,
+          "p25_itl_ms": 32.33139450276212,
+          "p50_itl_ms": 34.93347549738246,
+          "p75_itl_ms": 38.427272496846854,
+          "p99_itl_ms": 105.2845331311255,
+          "run_id": 3,
+          "wall_time_s": 41.71
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 3.362,
+          "p25": 3.362,
+          "p75": 3.366,
+          "n": 3,
+          "raw": [
+            3.362,
+            3.371,
+            3.362
+          ]
+        },
+        "output_throughput": {
+          "median": 430.386,
+          "p25": 430.372,
+          "p75": 430.907,
+          "n": 3,
+          "raw": [
+            430.357,
+            431.428,
+            430.386
+          ]
+        },
+        "total_token_throughput": {
+          "median": 2148.57,
+          "p25": 2148.497,
+          "p75": 2151.17,
+          "n": 3,
+          "raw": [
+            2148.424,
+            2153.77,
+            2148.57
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 114.578,
+          "p25": 113.71,
+          "p75": 119.392,
+          "n": 3,
+          "raw": [
+            112.841,
+            124.206,
+            114.578
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 100.143,
+          "p25": 98.902,
+          "p75": 101.145,
+          "n": 3,
+          "raw": [
+            97.66,
+            102.146,
+            100.143
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 37.442,
+          "p25": 37.355,
+          "p75": 37.501,
+          "n": 3,
+          "raw": [
+            37.561,
+            37.268,
+            37.442
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 37.763,
+          "p25": 37.662,
+          "p75": 37.893,
+          "n": 3,
+          "raw": [
+            38.024,
+            37.561,
+            37.763
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 37.149,
+          "p25": 37.063,
+          "p75": 37.208,
+          "n": 3,
+          "raw": [
+            37.267,
+            36.977,
+            37.149
+          ]
+        },
+        "median_itl_ms": {
+          "median": 34.994,
+          "p25": 34.964,
+          "p75": 35.081,
+          "n": 3,
+          "raw": [
+            35.169,
+            34.994,
+            34.933
+          ]
+        }
+      }
+    },
+    "rate_8": {
+      "runs": [
+        {
+          "date": "20260401-091958",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "8",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 17.611910421001085,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 5.677975734009887,
+          "request_goodput": null,
+          "output_throughput": 726.7808939532655,
+          "total_token_throughput": 3628.2264940323175,
+          "max_output_tokens_per_s": 1182.0,
+          "max_concurrent_requests": 60,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 121.15336219016172,
+          "median_ttft_ms": 114.56128800273291,
+          "std_ttft_ms": 43.99568451713517,
+          "p25_ttft_ms": 98.3192527492065,
+          "p50_ttft_ms": 114.56128800273291,
+          "p75_ttft_ms": 130.59928299844614,
+          "p99_ttft_ms": 312.5071797465353,
+          "mean_tpot_ms": 42.47109283456752,
+          "median_tpot_ms": 42.39760704329842,
+          "std_tpot_ms": 2.80174800599439,
+          "p25_tpot_ms": 40.24340900788212,
+          "p50_tpot_ms": 42.39760704329842,
+          "p75_tpot_ms": 44.88606414569525,
+          "p99_tpot_ms": 47.68514393399127,
+          "mean_itl_ms": 42.13923025132374,
+          "median_itl_ms": 40.497153997421265,
+          "std_itl_ms": 14.080379079780345,
+          "p25_itl_ms": 35.54305799661961,
+          "p50_itl_ms": 40.497153997421265,
+          "p75_itl_ms": 44.29283949684759,
+          "p99_itl_ms": 116.66819781254164,
+          "run_id": 1,
+          "wall_time_s": 29.43
+        },
+        {
+          "date": "20260401-092544",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "8",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 17.59210494099534,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 5.684368092130203,
+          "request_goodput": null,
+          "output_throughput": 727.599115792666,
+          "total_token_throughput": 3632.3112108711994,
+          "max_output_tokens_per_s": 1228.0,
+          "max_concurrent_requests": 59,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 119.86354472996027,
+          "median_ttft_ms": 110.19709550237167,
+          "std_ttft_ms": 48.87135755356635,
+          "p25_ttft_ms": 96.57886774766666,
+          "p50_ttft_ms": 110.19709550237167,
+          "p75_ttft_ms": 126.00829750226694,
+          "p99_ttft_ms": 349.9648839543809,
+          "mean_tpot_ms": 42.279962055593884,
+          "median_tpot_ms": 42.33734035828035,
+          "std_tpot_ms": 2.41773833722487,
+          "p25_tpot_ms": 40.33919503738108,
+          "p50_tpot_ms": 42.33734035828035,
+          "p75_tpot_ms": 44.47736677362327,
+          "p99_tpot_ms": 46.60349261112475,
+          "mean_itl_ms": 41.94960052734416,
+          "median_itl_ms": 41.024626003490994,
+          "std_itl_ms": 14.086987867418111,
+          "p25_itl_ms": 36.9677012477041,
+          "p50_itl_ms": 41.024626003490994,
+          "p75_itl_ms": 43.15386450434744,
+          "p99_itl_ms": 118.84493761739577,
+          "run_id": 2,
+          "wall_time_s": 30.14
+        },
+        {
+          "date": "20260401-093131",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "8",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 17.736658335998072,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 5.638040610899146,
+          "request_goodput": null,
+          "output_throughput": 721.6691981950906,
+          "total_token_throughput": 3602.707950364554,
+          "max_output_tokens_per_s": 1289.0,
+          "max_concurrent_requests": 62,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 132.99746183954994,
+          "median_ttft_ms": 117.46043699895381,
+          "std_ttft_ms": 60.444606613919376,
+          "p25_ttft_ms": 102.31601175109972,
+          "p50_ttft_ms": 117.46043699895381,
+          "p75_ttft_ms": 135.38615700053924,
+          "p99_ttft_ms": 376.21447980927775,
+          "mean_tpot_ms": 42.296515217718465,
+          "median_tpot_ms": 42.965021519681095,
+          "std_tpot_ms": 2.604082258258073,
+          "p25_tpot_ms": 41.36263941144871,
+          "p50_tpot_ms": 42.965021519681095,
+          "p75_tpot_ms": 44.37930761021447,
+          "p99_tpot_ms": 45.456309334196675,
+          "mean_itl_ms": 41.96601605335957,
+          "median_itl_ms": 40.21012150042225,
+          "std_itl_ms": 13.980738216414425,
+          "p25_itl_ms": 37.23528024966072,
+          "p50_itl_ms": 40.21012150042225,
+          "p75_itl_ms": 42.686656499427045,
+          "p99_itl_ms": 111.7258771503839,
+          "run_id": 3,
+          "wall_time_s": 29.72
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 5.678,
+          "p25": 5.658,
+          "p75": 5.681,
+          "n": 3,
+          "raw": [
+            5.678,
+            5.684,
+            5.638
+          ]
+        },
+        "output_throughput": {
+          "median": 726.781,
+          "p25": 724.225,
+          "p75": 727.19,
+          "n": 3,
+          "raw": [
+            726.781,
+            727.599,
+            721.669
+          ]
+        },
+        "total_token_throughput": {
+          "median": 3628.226,
+          "p25": 3615.467,
+          "p75": 3630.269,
+          "n": 3,
+          "raw": [
+            3628.226,
+            3632.311,
+            3602.708
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 121.153,
+          "p25": 120.508,
+          "p75": 127.075,
+          "n": 3,
+          "raw": [
+            121.153,
+            119.864,
+            132.997
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 114.561,
+          "p25": 112.379,
+          "p75": 116.011,
+          "n": 3,
+          "raw": [
+            114.561,
+            110.197,
+            117.46
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 42.297,
+          "p25": 42.288,
+          "p75": 42.384,
+          "n": 3,
+          "raw": [
+            42.471,
+            42.28,
+            42.297
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 42.398,
+          "p25": 42.367,
+          "p75": 42.681,
+          "n": 3,
+          "raw": [
+            42.398,
+            42.337,
+            42.965
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 41.966,
+          "p25": 41.958,
+          "p75": 42.053,
+          "n": 3,
+          "raw": [
+            42.139,
+            41.95,
+            41.966
+          ]
+        },
+        "median_itl_ms": {
+          "median": 40.497,
+          "p25": 40.354,
+          "p75": 40.761,
+          "n": 3,
+          "raw": [
+            40.497,
+            41.025,
+            40.21
+          ]
+        }
+      }
+    },
+    "rate_16": {
+      "runs": [
+        {
+          "date": "20260401-092023",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "16",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 12.590991985998699,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 7.94218597797544,
+          "request_goodput": null,
+          "output_throughput": 1016.5998051808563,
+          "total_token_throughput": 5075.056839926307,
+          "max_output_tokens_per_s": 1544.0,
+          "max_concurrent_requests": 95,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 137.62740933991154,
+          "median_ttft_ms": 132.80182700327714,
+          "std_ttft_ms": 48.695321732627534,
+          "p25_ttft_ms": 102.14292724594998,
+          "p50_ttft_ms": 132.80182700327714,
+          "p75_ttft_ms": 162.8423487454711,
+          "p99_ttft_ms": 336.6572275281215,
+          "mean_tpot_ms": 52.7964461141757,
+          "median_tpot_ms": 53.1886512322872,
+          "std_tpot_ms": 4.504202221424923,
+          "p25_tpot_ms": 49.973387330719845,
+          "p50_tpot_ms": 53.1886512322872,
+          "p75_tpot_ms": 57.09473867715332,
+          "p99_tpot_ms": 57.98861202687519,
+          "mean_itl_ms": 52.38392323476717,
+          "median_itl_ms": 54.686155504896306,
+          "std_itl_ms": 15.263096350244538,
+          "p25_itl_ms": 43.81254025247472,
+          "p50_itl_ms": 54.686155504896306,
+          "p75_itl_ms": 56.90288924779452,
+          "p99_itl_ms": 112.00771307769173,
+          "run_id": 1,
+          "wall_time_s": 25.15
+        },
+        {
+          "date": "20260401-092609",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "16",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 12.87770705499861,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 7.765357572812935,
+          "request_goodput": null,
+          "output_throughput": 993.9657693200556,
+          "total_token_throughput": 4962.063489027465,
+          "max_output_tokens_per_s": 1509.0,
+          "max_concurrent_requests": 98,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 146.5855676199135,
+          "median_ttft_ms": 134.8184635025973,
+          "std_ttft_ms": 47.8070334964932,
+          "p25_ttft_ms": 114.10793974755506,
+          "p50_ttft_ms": 134.8184635025973,
+          "p75_ttft_ms": 176.17134000101942,
+          "p99_ttft_ms": 284.9040705926018,
+          "mean_tpot_ms": 53.38604592472406,
+          "median_tpot_ms": 54.37541911812768,
+          "std_tpot_ms": 2.8305609536375873,
+          "p25_tpot_ms": 51.68882487596134,
+          "p50_tpot_ms": 54.37541911812768,
+          "p75_tpot_ms": 55.75119114762956,
+          "p99_tpot_ms": 56.66003346361536,
+          "mean_itl_ms": 52.96890922156081,
+          "median_itl_ms": 51.945652998256264,
+          "std_itl_ms": 18.291864513662397,
+          "p25_itl_ms": 44.179759999678936,
+          "p50_itl_ms": 51.945652998256264,
+          "p75_itl_ms": 56.18442074955965,
+          "p99_itl_ms": 147.5545971831889,
+          "run_id": 2,
+          "wall_time_s": 24.76
+        },
+        {
+          "date": "20260401-093156",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+          "num_prompts": 100,
+          "request_rate": "16",
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 12.995698487997288,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51100,
+          "total_output_tokens": 12800,
+          "request_throughput": 7.694853808154992,
+          "request_goodput": null,
+          "output_throughput": 984.941287443839,
+          "total_token_throughput": 4917.01158341104,
+          "max_output_tokens_per_s": 1544.0,
+          "max_concurrent_requests": 99,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 141.76357195014134,
+          "median_ttft_ms": 126.49305749800988,
+          "std_ttft_ms": 46.80841133573403,
+          "p25_ttft_ms": 109.3181567503052,
+          "p50_ttft_ms": 126.49305749800988,
+          "p75_ttft_ms": 172.94130325171864,
+          "p99_ttft_ms": 285.89228548255073,
+          "mean_tpot_ms": 53.57645866495989,
+          "median_tpot_ms": 53.82489851574179,
+          "std_tpot_ms": 2.318934231374037,
+          "p25_tpot_ms": 53.05382230317192,
+          "p50_tpot_ms": 53.82489851574179,
+          "p75_tpot_ms": 55.43099129525532,
+          "p99_tpot_ms": 56.030925911977036,
+          "mean_itl_ms": 53.15783054382621,
+          "median_itl_ms": 51.41274100242299,
+          "std_itl_ms": 14.108670796072989,
+          "p25_itl_ms": 45.595788998980424,
+          "p50_itl_ms": 51.41274100242299,
+          "p75_itl_ms": 57.948046747696935,
+          "p99_itl_ms": 103.98174170972197,
+          "run_id": 3,
+          "wall_time_s": 25.76
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 7.765,
+          "p25": 7.73,
+          "p75": 7.854,
+          "n": 3,
+          "raw": [
+            7.942,
+            7.765,
+            7.695
+          ]
+        },
+        "output_throughput": {
+          "median": 993.966,
+          "p25": 989.454,
+          "p75": 1005.283,
+          "n": 3,
+          "raw": [
+            1016.6,
+            993.966,
+            984.941
+          ]
+        },
+        "total_token_throughput": {
+          "median": 4962.063,
+          "p25": 4939.538,
+          "p75": 5018.56,
+          "n": 3,
+          "raw": [
+            5075.057,
+            4962.063,
+            4917.012
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 141.764,
+          "p25": 139.695,
+          "p75": 144.175,
+          "n": 3,
+          "raw": [
+            137.627,
+            146.586,
+            141.764
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 132.802,
+          "p25": 129.647,
+          "p75": 133.81,
+          "n": 3,
+          "raw": [
+            132.802,
+            134.818,
+            126.493
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 53.386,
+          "p25": 53.091,
+          "p75": 53.481,
+          "n": 3,
+          "raw": [
+            52.796,
+            53.386,
+            53.576
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 53.825,
+          "p25": 53.507,
+          "p75": 54.1,
+          "n": 3,
+          "raw": [
+            53.189,
+            54.375,
+            53.825
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 52.969,
+          "p25": 52.676,
+          "p75": 53.063,
+          "n": 3,
+          "raw": [
+            52.384,
+            52.969,
+            53.158
+          ]
+        },
+        "median_itl_ms": {
+          "median": 51.946,
+          "p25": 51.679,
+          "p75": 53.316,
+          "n": 3,
+          "raw": [
+            54.686,
+            51.946,
+            51.413
+          ]
+        }
+      }
+    }
+  },
+  "peak_vram_mib": {
+    "values": [
+      24018,
+      24018,
+      24018
+    ],
+    "max": 24018,
+    "median": 24018.0
+  }
+}
