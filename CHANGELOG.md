@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.0](https://github.com/Alberto-Codes/turboquant-vllm/compare/v1.3.0...v1.4.0) (2026-04-01)
+
+
+### Features
+
+* **kv-cache:** add asymmetric K/V compression (k_bits/v_bits) ([#59](https://github.com/Alberto-Codes/turboquant-vllm/issues/59)) ([cf7e45e](https://github.com/Alberto-Codes/turboquant-vllm/commit/cf7e45ecb24008cef51f6e66d8104c1ec7cdb20e))
+
+
+### Bug Fixes
+
+* **verify:** require --k-bits and --v-bits together ([cf7e45e](https://github.com/Alberto-Codes/turboquant-vllm/commit/cf7e45ecb24008cef51f6e66d8104c1ec7cdb20e))
+* **vllm:** validate TQ4_K_BITS/TQ4_V_BITS env vars ([cf7e45e](https://github.com/Alberto-Codes/turboquant-vllm/commit/cf7e45ecb24008cef51f6e66d8104c1ec7cdb20e))
+
+
+### Documentation
+
+* **experiments:** add Exp 025-027 asymmetric quality matrix and serving ([cf7e45e](https://github.com/Alberto-Codes/turboquant-vllm/commit/cf7e45ecb24008cef51f6e66d8104c1ec7cdb20e))
+* **experiments:** end-to-end vLLM serving benchmarks (Exp 029) ([#62](https://github.com/Alberto-Codes/turboquant-vllm/issues/62)) ([79c943c](https://github.com/Alberto-Codes/turboquant-vllm/commit/79c943c079d8e4ab0f3f6767c57477bcd6c50124))
+* **experiments:** validate decode buffer OOM fix on 3 models (Exp 028) ([#61](https://github.com/Alberto-Codes/turboquant-vllm/issues/61)) ([509782a](https://github.com/Alberto-Codes/turboquant-vllm/commit/509782ac7f0e6f586aa2422b66e4f9ad03091eb2))
+
 ## [1.3.0](https://github.com/Alberto-Codes/turboquant-vllm/compare/v1.2.2...v1.3.0) (2026-03-31)
 
 
