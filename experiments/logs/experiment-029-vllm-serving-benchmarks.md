@@ -96,7 +96,7 @@ baseline venv.
 
 | Model | TQ4 tok/s | Notes |
 |-------|-----------|-------|
-| Molmo2-4B | 6,170 (median, 3 runs) | Peak VRAM 23,874 MiB |
+| Molmo2-4B | 6,186 (median, 3 runs) | Peak VRAM 23,874 MiB |
 | Llama-3.1-8B | OOM | 16 GiB weights + activations exceed 24 GiB at 0.85 util |
 
 Baseline offline not collected (same OOM limitation for 8B model; Molmo2
