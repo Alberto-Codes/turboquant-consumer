@@ -1,0 +1,10 @@
+{
+  "elapsed_time": 20.866244224002003,
+  "num_requests": 200,
+  "total_num_tokens": 128000,
+  "requests_per_second": 9.584858580824248,
+  "tokens_per_second": 6134.309491727518,
+  "run_id": 2,
+  "wall_time_s": 67.35,
+  "peak_vram_mib": 23874
+}

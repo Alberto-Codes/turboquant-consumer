@@ -1,0 +1,1493 @@
+{
+  "experiment": "029-vllm-serving-benchmarks",
+  "tag": "molmo2-4b-tq4",
+  "model": "allenai/Molmo2-4B",
+  "config": {
+    "attention_backend": "CUSTOM",
+    "enforce_eager": true,
+    "gpu_memory_utilization": 0.85,
+    "max_model_len": 4096,
+    "max_num_batched_tokens": 4096,
+    "trust_remote_code": true,
+    "vllm_binary": "vllm",
+    "runs": 3,
+    "tq4_use_fused_paged": "0",
+    "tq4_k_bits": null,
+    "tq4_v_bits": null
+  },
+  "layer1_offline": {
+    "runs": [
+      {
+        "elapsed_time": 20.691086364997318,
+        "num_requests": 200,
+        "total_num_tokens": 128000,
+        "requests_per_second": 9.665998027939986,
+        "tokens_per_second": 6186.238737881591,
+        "run_id": 1,
+        "wall_time_s": 66.47,
+        "peak_vram_mib": 23874
+      },
+      {
+        "elapsed_time": 20.866244224002003,
+        "num_requests": 200,
+        "total_num_tokens": 128000,
+        "requests_per_second": 9.584858580824248,
+        "tokens_per_second": 6134.309491727518,
+        "run_id": 2,
+        "wall_time_s": 67.35,
+        "peak_vram_mib": 23874
+      },
+      {
+        "elapsed_time": 20.68655231300363,
+        "num_requests": 200,
+        "total_num_tokens": 128000,
+        "requests_per_second": 9.668116608985606,
+        "tokens_per_second": 6187.594629750788,
+        "run_id": 3,
+        "wall_time_s": 68.57,
+        "peak_vram_mib": 23874
+      }
+    ],
+    "aggregate": {
+      "n_runs": 3,
+      "n_ok": 3,
+      "elapsed_time": {
+        "median": 20.691,
+        "p25": 20.689,
+        "p75": 20.779,
+        "n": 3,
+        "raw": [
+          20.691,
+          20.866,
+          20.687
+        ]
+      },
+      "tokens_per_second": {
+        "median": 6186.239,
+        "p25": 6160.274,
+        "p75": 6186.917,
+        "n": 3,
+        "raw": [
+          6186.239,
+          6134.309,
+          6187.595
+        ]
+      },
+      "requests_per_second": {
+        "median": 9.666,
+        "p25": 9.625,
+        "p75": 9.667,
+        "n": 3,
+        "raw": [
+          9.666,
+          9.585,
+          9.668
+        ]
+      },
+      "peak_vram_mib": {
+        "median": 23874.0,
+        "p25": 23874.0,
+        "p75": 23874.0,
+        "n": 3,
+        "raw": [
+          23874.0,
+          23874.0,
+          23874.0
+        ]
+      }
+    }
+  },
+  "layer2_saturation": {
+    "runs": [
+      {
+        "date": "20260401-084906",
+        "endpoint_type": "openai-chat",
+        "backend": "openai-chat",
+        "label": null,
+        "model_id": "allenai/Molmo2-4B",
+        "tokenizer_id": "allenai/Molmo2-4B",
+        "num_prompts": 200,
+        "request_rate": "inf",
+        "burstiness": 1.0,
+        "max_concurrency": null,
+        "duration": 20.772002853998856,
+        "completed": 200,
+        "failed": 0,
+        "total_input_tokens": 102400,
+        "total_output_tokens": 25600,
+        "request_throughput": 9.628344527282675,
+        "request_goodput": null,
+        "output_throughput": 1232.4280994921824,
+        "total_token_throughput": 6162.140497460912,
+        "max_output_tokens_per_s": 2000.0,
+        "max_concurrent_requests": 200,
+        "rtfx": 0.0,
+        "mean_ttft_ms": 4338.514937505097,
+        "median_ttft_ms": 4162.965220999467,
+        "std_ttft_ms": 2397.775266485655,
+        "p25_ttft_ms": 2324.462562253757,
+        "p50_ttft_ms": 4162.965220999467,
+        "p75_ttft_ms": 6506.447590501921,
+        "p99_ttft_ms": 8358.592466693444,
+        "mean_tpot_ms": 125.00985121929001,
+        "median_tpot_ms": 127.15723313387542,
+        "std_tpot_ms": 15.46237236621469,
+        "p25_tpot_ms": 111.19748654727026,
+        "p50_tpot_ms": 127.15723313387542,
+        "p75_tpot_ms": 138.3930048680732,
+        "p99_tpot_ms": 147.0557758578523,
+        "mean_itl_ms": 124.03317212808332,
+        "median_itl_ms": 104.96503149988712,
+        "std_itl_ms": 69.58428421211603,
+        "p25_itl_ms": 100.25006249998114,
+        "p50_itl_ms": 104.96503149988712,
+        "p75_itl_ms": 111.61451949919865,
+        "p99_itl_ms": 380.23772430125973
+      },
+      {
+        "date": "20260401-085500",
+        "endpoint_type": "openai-chat",
+        "backend": "openai-chat",
+        "label": null,
+        "model_id": "allenai/Molmo2-4B",
+        "tokenizer_id": "allenai/Molmo2-4B",
+        "num_prompts": 200,
+        "request_rate": "inf",
+        "burstiness": 1.0,
+        "max_concurrency": null,
+        "duration": 20.753465518995654,
+        "completed": 200,
+        "failed": 0,
+        "total_input_tokens": 102400,
+        "total_output_tokens": 25600,
+        "request_throughput": 9.636944722168929,
+        "request_goodput": null,
+        "output_throughput": 1233.528924437623,
+        "total_token_throughput": 6167.644622188114,
+        "max_output_tokens_per_s": 2000.0,
+        "max_concurrent_requests": 200,
+        "rtfx": 0.0,
+        "mean_ttft_ms": 4356.77909832506,
+        "median_ttft_ms": 4171.7006334984035,
+        "std_ttft_ms": 2393.2931339790275,
+        "p25_ttft_ms": 2336.604039752274,
+        "p50_ttft_ms": 4171.7006334984035,
+        "p75_ttft_ms": 6515.211937750792,
+        "p99_ttft_ms": 8372.765705912898,
+        "mean_tpot_ms": 124.80736971023862,
+        "median_tpot_ms": 126.92770018503776,
+        "std_tpot_ms": 15.557533884999955,
+        "p25_tpot_ms": 110.97205975195499,
+        "p50_tpot_ms": 126.92770018503776,
+        "p75_tpot_ms": 138.13431975790098,
+        "p99_tpot_ms": 147.69014966401386,
+        "mean_itl_ms": 123.83227702613226,
+        "median_itl_ms": 104.99055049513117,
+        "std_itl_ms": 70.64381342074647,
+        "p25_itl_ms": 99.07135600042238,
+        "p50_itl_ms": 104.99055049513117,
+        "p75_itl_ms": 111.92001849667577,
+        "p99_itl_ms": 386.92447014844214
+      },
+      {
+        "date": "20260401-090055",
+        "endpoint_type": "openai-chat",
+        "backend": "openai-chat",
+        "label": null,
+        "model_id": "allenai/Molmo2-4B",
+        "tokenizer_id": "allenai/Molmo2-4B",
+        "num_prompts": 200,
+        "request_rate": "inf",
+        "burstiness": 1.0,
+        "max_concurrency": null,
+        "duration": 21.05380767499446,
+        "completed": 200,
+        "failed": 0,
+        "total_input_tokens": 102400,
+        "total_output_tokens": 25600,
+        "request_throughput": 9.499469316305163,
+        "request_goodput": null,
+        "output_throughput": 1215.9320724870609,
+        "total_token_throughput": 6079.660362435304,
+        "max_output_tokens_per_s": 2000.0,
+        "max_concurrent_requests": 200,
+        "rtfx": 0.0,
+        "mean_ttft_ms": 4441.615686915029,
+        "median_ttft_ms": 4264.908283501427,
+        "std_ttft_ms": 2420.401307085117,
+        "p25_ttft_ms": 2425.3033285003767,
+        "p50_ttft_ms": 4264.908283501427,
+        "p75_ttft_ms": 6656.950727747244,
+        "p99_ttft_ms": 8494.64891660442,
+        "mean_tpot_ms": 125.58657874873919,
+        "median_tpot_ms": 127.50919457086968,
+        "std_tpot_ms": 15.33351792471854,
+        "p25_tpot_ms": 111.63239803345206,
+        "p50_tpot_ms": 127.50919457086968,
+        "p75_tpot_ms": 138.61953340358556,
+        "p99_tpot_ms": 148.0438617889918,
+        "mean_itl_ms": 124.60538445812375,
+        "median_itl_ms": 104.71066649915883,
+        "std_itl_ms": 70.1950423268299,
+        "p25_itl_ms": 99.8529394983052,
+        "p50_itl_ms": 104.71066649915883,
+        "p75_itl_ms": 109.02892575177248,
+        "p99_itl_ms": 389.97580959738116
+      }
+    ],
+    "aggregate": {
+      "n_runs": 3,
+      "n_ok": 3,
+      "request_throughput": {
+        "median": 9.628,
+        "p25": 9.564,
+        "p75": 9.633,
+        "n": 3,
+        "raw": [
+          9.628,
+          9.637,
+          9.499
+        ]
+      },
+      "output_throughput": {
+        "median": 1232.428,
+        "p25": 1224.18,
+        "p75": 1232.979,
+        "n": 3,
+        "raw": [
+          1232.428,
+          1233.529,
+          1215.932
+        ]
+      },
+      "total_token_throughput": {
+        "median": 6162.14,
+        "p25": 6120.9,
+        "p75": 6164.893,
+        "n": 3,
+        "raw": [
+          6162.14,
+          6167.645,
+          6079.66
+        ]
+      },
+      "mean_ttft_ms": {
+        "median": 4356.779,
+        "p25": 4347.647,
+        "p75": 4399.197,
+        "n": 3,
+        "raw": [
+          4338.515,
+          4356.779,
+          4441.616
+        ]
+      },
+      "median_ttft_ms": {
+        "median": 4171.701,
+        "p25": 4167.333,
+        "p75": 4218.304,
+        "n": 3,
+        "raw": [
+          4162.965,
+          4171.701,
+          4264.908
+        ]
+      },
+      "mean_tpot_ms": {
+        "median": 125.01,
+        "p25": 124.909,
+        "p75": 125.298,
+        "n": 3,
+        "raw": [
+          125.01,
+          124.807,
+          125.587
+        ]
+      },
+      "median_tpot_ms": {
+        "median": 127.157,
+        "p25": 127.042,
+        "p75": 127.333,
+        "n": 3,
+        "raw": [
+          127.157,
+          126.928,
+          127.509
+        ]
+      },
+      "mean_itl_ms": {
+        "median": 124.033,
+        "p25": 123.933,
+        "p75": 124.319,
+        "n": 3,
+        "raw": [
+          124.033,
+          123.832,
+          124.605
+        ]
+      }
+    }
+  },
+  "layer3_sweep": {
+    "rate_1": {
+      "runs": [
+        {
+          "date": "20260401-085102",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 1.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 104.14467760000116,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 0.9602026940260928,
+          "request_goodput": null,
+          "output_throughput": 122.90594483533988,
+          "total_token_throughput": 614.5297241766995,
+          "max_output_tokens_per_s": 351.0,
+          "max_concurrent_requests": 12,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 92.69476935027342,
+          "median_ttft_ms": 85.22462049950263,
+          "std_ttft_ms": 38.141028964056154,
+          "p25_ttft_ms": 67.91033124864043,
+          "p50_ttft_ms": 85.22462049950263,
+          "p75_ttft_ms": 106.61093450289627,
+          "p99_ttft_ms": 228.39429561965534,
+          "mean_tpot_ms": 30.954723302045785,
+          "median_tpot_ms": 30.960790374034172,
+          "std_tpot_ms": 1.2014291141689337,
+          "p25_tpot_ms": 29.881046501991584,
+          "p50_tpot_ms": 30.960790374034172,
+          "p75_tpot_ms": 31.701117570866167,
+          "p99_tpot_ms": 33.98509694969451,
+          "mean_itl_ms": 30.712810721713595,
+          "median_itl_ms": 26.45726449554786,
+          "std_itl_ms": 11.720989257562335,
+          "p25_itl_ms": 23.37742525014619,
+          "p50_itl_ms": 26.45726449554786,
+          "p75_itl_ms": 35.878593000234105,
+          "p99_itl_ms": 93.8768150087711
+        },
+        {
+          "date": "20260401-085656",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 1.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 104.04533939399698,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 0.9611194560221659,
+          "request_goodput": null,
+          "output_throughput": 123.02329037083723,
+          "total_token_throughput": 615.1164518541862,
+          "max_output_tokens_per_s": 360.0,
+          "max_concurrent_requests": 12,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 90.07602376004797,
+          "median_ttft_ms": 83.4817764989566,
+          "std_ttft_ms": 33.488658838125474,
+          "p25_ttft_ms": 66.5981694983202,
+          "p50_ttft_ms": 83.4817764989566,
+          "p75_ttft_ms": 106.36639924814517,
+          "p99_ttft_ms": 224.69584706268517,
+          "mean_tpot_ms": 30.810618408423743,
+          "median_tpot_ms": 30.703769338574567,
+          "std_tpot_ms": 1.227381337761776,
+          "p25_tpot_ms": 29.85244856103322,
+          "p50_tpot_ms": 30.703769338574567,
+          "p75_tpot_ms": 31.497859596444368,
+          "p99_tpot_ms": 33.98100961275812,
+          "mean_itl_ms": 30.569841148436012,
+          "median_itl_ms": 26.543837502686074,
+          "std_itl_ms": 11.44632259031011,
+          "p25_itl_ms": 23.28558824956417,
+          "p50_itl_ms": 26.543837502686074,
+          "p75_itl_ms": 35.31243050019839,
+          "p99_itl_ms": 95.82298002947937
+        },
+        {
+          "date": "20260401-090252",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 1.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 104.36252653299744,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 0.9581983430458816,
+          "request_goodput": null,
+          "output_throughput": 122.64938790987284,
+          "total_token_throughput": 613.2469395493642,
+          "max_output_tokens_per_s": 360.0,
+          "max_concurrent_requests": 12,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 102.6569061302871,
+          "median_ttft_ms": 89.1927670018049,
+          "std_ttft_ms": 59.07981658920267,
+          "p25_ttft_ms": 72.46141274663387,
+          "p50_ttft_ms": 89.1927670018049,
+          "p75_ttft_ms": 107.28924475006352,
+          "p99_ttft_ms": 329.0874553354662,
+          "mean_tpot_ms": 31.36618586432697,
+          "median_tpot_ms": 31.2511652638044,
+          "std_tpot_ms": 2.4155514886765683,
+          "p25_tpot_ms": 29.35420077163889,
+          "p50_tpot_ms": 31.2511652638044,
+          "p75_tpot_ms": 33.51648456887555,
+          "p99_tpot_ms": 35.44196667445571,
+          "mean_itl_ms": 31.121052427419613,
+          "median_itl_ms": 25.61966099892743,
+          "std_itl_ms": 14.238587119275964,
+          "p25_itl_ms": 23.633496997717884,
+          "p50_itl_ms": 25.61966099892743,
+          "p75_itl_ms": 36.400981503902585,
+          "p99_itl_ms": 109.69407882927044
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 0.96,
+          "p25": 0.959,
+          "p75": 0.961,
+          "n": 3,
+          "raw": [
+            0.96,
+            0.961,
+            0.958
+          ]
+        },
+        "output_throughput": {
+          "median": 122.906,
+          "p25": 122.778,
+          "p75": 122.965,
+          "n": 3,
+          "raw": [
+            122.906,
+            123.023,
+            122.649
+          ]
+        },
+        "total_token_throughput": {
+          "median": 614.53,
+          "p25": 613.888,
+          "p75": 614.823,
+          "n": 3,
+          "raw": [
+            614.53,
+            615.116,
+            613.247
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 92.695,
+          "p25": 91.385,
+          "p75": 97.676,
+          "n": 3,
+          "raw": [
+            92.695,
+            90.076,
+            102.657
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 85.225,
+          "p25": 84.353,
+          "p75": 87.209,
+          "n": 3,
+          "raw": [
+            85.225,
+            83.482,
+            89.193
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 30.955,
+          "p25": 30.883,
+          "p75": 31.16,
+          "n": 3,
+          "raw": [
+            30.955,
+            30.811,
+            31.366
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 30.961,
+          "p25": 30.832,
+          "p75": 31.106,
+          "n": 3,
+          "raw": [
+            30.961,
+            30.704,
+            31.251
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 30.713,
+          "p25": 30.641,
+          "p75": 30.917,
+          "n": 3,
+          "raw": [
+            30.713,
+            30.57,
+            31.121
+          ]
+        }
+      }
+    },
+    "rate_2": {
+      "runs": [
+        {
+          "date": "20260401-085207",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 2.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 54.28312327399908,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 1.8421931894972359,
+          "request_goodput": null,
+          "output_throughput": 235.8007282556462,
+          "total_token_throughput": 1179.0036412782308,
+          "max_output_tokens_per_s": 512.0,
+          "max_concurrent_requests": 18,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 98.0680783202115,
+          "median_ttft_ms": 92.53087749675615,
+          "std_ttft_ms": 35.67963951904981,
+          "p25_ttft_ms": 75.89654499679455,
+          "p50_ttft_ms": 92.53087749675615,
+          "p75_ttft_ms": 108.35179600144329,
+          "p99_ttft_ms": 223.92369937457272,
+          "mean_tpot_ms": 32.58585315621831,
+          "median_tpot_ms": 32.597768169279604,
+          "std_tpot_ms": 1.2617643582041178,
+          "p25_tpot_ms": 31.575419383844693,
+          "p50_tpot_ms": 32.597768169279604,
+          "p75_tpot_ms": 33.60073483267703,
+          "p99_tpot_ms": 34.81659880116849,
+          "mean_itl_ms": 32.33624998523246,
+          "median_itl_ms": 31.176767999568256,
+          "std_itl_ms": 11.965226279292713,
+          "p25_itl_ms": 25.381891244251165,
+          "p50_itl_ms": 31.176767999568256,
+          "p75_itl_ms": 37.24667225469602,
+          "p99_itl_ms": 98.7754949291416
+        },
+        {
+          "date": "20260401-085801",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 2.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 54.29448838099779,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 1.8418075753523153,
+          "request_goodput": null,
+          "output_throughput": 235.75136964509636,
+          "total_token_throughput": 1178.756848225482,
+          "max_output_tokens_per_s": 522.0,
+          "max_concurrent_requests": 18,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 95.66423435950128,
+          "median_ttft_ms": 94.71811299954425,
+          "std_ttft_ms": 28.7126907378469,
+          "p25_ttft_ms": 71.75468874811486,
+          "p50_ttft_ms": 94.71811299954425,
+          "p75_ttft_ms": 112.1528594976553,
+          "p99_ttft_ms": 183.80628847982763,
+          "mean_tpot_ms": 32.3580686485847,
+          "median_tpot_ms": 32.421142811006746,
+          "std_tpot_ms": 1.2216909814784087,
+          "p25_tpot_ms": 31.50619766933318,
+          "p50_tpot_ms": 32.421142811006746,
+          "p75_tpot_ms": 33.29765278545878,
+          "p99_tpot_ms": 34.82630825252616,
+          "mean_itl_ms": 32.105206095080234,
+          "median_itl_ms": 31.14529400045285,
+          "std_itl_ms": 11.57094996749288,
+          "p25_itl_ms": 25.321321003502817,
+          "p50_itl_ms": 31.14529400045285,
+          "p75_itl_ms": 36.95877049904084,
+          "p99_itl_ms": 99.66392991962495
+        },
+        {
+          "date": "20260401-090357",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 2.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 53.94382244699955,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 1.853780386034957,
+          "request_goodput": null,
+          "output_throughput": 237.2838894124745,
+          "total_token_throughput": 1186.4194470623725,
+          "max_output_tokens_per_s": 612.0,
+          "max_concurrent_requests": 18,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 112.0699874296406,
+          "median_ttft_ms": 100.2755614972557,
+          "std_ttft_ms": 57.92711096902368,
+          "p25_ttft_ms": 78.83108799796901,
+          "p50_ttft_ms": 100.2755614972557,
+          "p75_ttft_ms": 116.05699174651818,
+          "p99_ttft_ms": 310.88996649989,
+          "mean_tpot_ms": 32.95867496984953,
+          "median_tpot_ms": 32.912766000004545,
+          "std_tpot_ms": 1.827741957723831,
+          "p25_tpot_ms": 31.93697249606505,
+          "p50_tpot_ms": 32.912766000004545,
+          "p75_tpot_ms": 34.66440827363353,
+          "p99_tpot_ms": 35.52285687852876,
+          "mean_itl_ms": 32.70111566906735,
+          "median_itl_ms": 26.127798002562486,
+          "std_itl_ms": 15.215603901927535,
+          "p25_itl_ms": 25.59105299587827,
+          "p50_itl_ms": 26.127798002562486,
+          "p75_itl_ms": 37.73621150139661,
+          "p99_itl_ms": 118.19689341784397
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 1.842,
+          "p25": 1.842,
+          "p75": 1.848,
+          "n": 3,
+          "raw": [
+            1.842,
+            1.842,
+            1.854
+          ]
+        },
+        "output_throughput": {
+          "median": 235.801,
+          "p25": 235.776,
+          "p75": 236.542,
+          "n": 3,
+          "raw": [
+            235.801,
+            235.751,
+            237.284
+          ]
+        },
+        "total_token_throughput": {
+          "median": 1179.004,
+          "p25": 1178.88,
+          "p75": 1182.712,
+          "n": 3,
+          "raw": [
+            1179.004,
+            1178.757,
+            1186.419
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 98.068,
+          "p25": 96.866,
+          "p75": 105.069,
+          "n": 3,
+          "raw": [
+            98.068,
+            95.664,
+            112.07
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 94.718,
+          "p25": 93.624,
+          "p75": 97.497,
+          "n": 3,
+          "raw": [
+            92.531,
+            94.718,
+            100.276
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 32.586,
+          "p25": 32.472,
+          "p75": 32.772,
+          "n": 3,
+          "raw": [
+            32.586,
+            32.358,
+            32.959
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 32.598,
+          "p25": 32.509,
+          "p75": 32.755,
+          "n": 3,
+          "raw": [
+            32.598,
+            32.421,
+            32.913
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 32.336,
+          "p25": 32.221,
+          "p75": 32.519,
+          "n": 3,
+          "raw": [
+            32.336,
+            32.105,
+            32.701
+          ]
+        }
+      }
+    },
+    "rate_4": {
+      "runs": [
+        {
+          "date": "20260401-085247",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 4.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 29.334753283997998,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 3.4089258918209357,
+          "request_goodput": null,
+          "output_throughput": 436.3425141530798,
+          "total_token_throughput": 2181.712570765399,
+          "max_output_tokens_per_s": 755.0,
+          "max_concurrent_requests": 28,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 95.29224833022454,
+          "median_ttft_ms": 94.03100700001232,
+          "std_ttft_ms": 26.442142416242447,
+          "p25_ttft_ms": 76.55713424901478,
+          "p50_ttft_ms": 94.03100700001232,
+          "p75_ttft_ms": 106.61853649617115,
+          "p99_ttft_ms": 199.51098364981598,
+          "mean_tpot_ms": 33.59978074314693,
+          "median_tpot_ms": 33.894237972456565,
+          "std_tpot_ms": 1.1191286996015886,
+          "p25_tpot_ms": 32.5026972697069,
+          "p50_tpot_ms": 33.894237972456565,
+          "p75_tpot_ms": 34.537047273619194,
+          "p99_tpot_ms": 35.73005017509199,
+          "mean_itl_ms": 33.33722692968365,
+          "median_itl_ms": 33.01557700251578,
+          "std_itl_ms": 12.008390346776817,
+          "p25_itl_ms": 26.01478699943982,
+          "p50_itl_ms": 33.01557700251578,
+          "p75_itl_ms": 37.96507774859492,
+          "p99_itl_ms": 100.2552361432754
+        },
+        {
+          "date": "20260401-085842",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 4.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 29.321869778999826,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 3.4104237128704353,
+          "request_goodput": null,
+          "output_throughput": 436.5342352474157,
+          "total_token_throughput": 2182.6711762370787,
+          "max_output_tokens_per_s": 764.0,
+          "max_concurrent_requests": 28,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 95.2477064699633,
+          "median_ttft_ms": 91.42569250252564,
+          "std_ttft_ms": 27.089953447404813,
+          "p25_ttft_ms": 78.84877575452265,
+          "p50_ttft_ms": 91.42569250252564,
+          "p75_ttft_ms": 106.41379750268243,
+          "p99_ttft_ms": 222.80505118716985,
+          "mean_tpot_ms": 33.46709999684717,
+          "median_tpot_ms": 33.60245439369923,
+          "std_tpot_ms": 1.0440965735783607,
+          "p25_tpot_ms": 32.43718164174955,
+          "p50_tpot_ms": 33.60245439369923,
+          "p75_tpot_ms": 34.34837637993099,
+          "p99_tpot_ms": 35.49986610366453,
+          "mean_itl_ms": 33.205579315542764,
+          "median_itl_ms": 33.3560295002826,
+          "std_itl_ms": 10.970194676187182,
+          "p25_itl_ms": 25.943337752323714,
+          "p50_itl_ms": 33.3560295002826,
+          "p75_itl_ms": 38.085929249064066,
+          "p99_itl_ms": 100.52117751547485
+        },
+        {
+          "date": "20260401-090439",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 4.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 29.181923489995825,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 3.426778911070824,
+          "request_goodput": null,
+          "output_throughput": 438.6277006170655,
+          "total_token_throughput": 2193.1385030853276,
+          "max_output_tokens_per_s": 818.0,
+          "max_concurrent_requests": 30,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 99.376989680095,
+          "median_ttft_ms": 83.70929800003069,
+          "std_ttft_ms": 54.23789867008217,
+          "p25_ttft_ms": 70.20436849961698,
+          "p50_ttft_ms": 83.70929800003069,
+          "p75_ttft_ms": 110.76234675238084,
+          "p99_ttft_ms": 339.57062414338037,
+          "mean_tpot_ms": 34.12972697929029,
+          "median_tpot_ms": 34.1094623464579,
+          "std_tpot_ms": 1.7698563870864619,
+          "p25_tpot_ms": 32.87626135628613,
+          "p50_tpot_ms": 34.1094623464579,
+          "p75_tpot_ms": 35.8422251456933,
+          "p99_tpot_ms": 36.250509601253675,
+          "mean_itl_ms": 33.86832100804861,
+          "median_itl_ms": 27.389596001739847,
+          "std_itl_ms": 15.546049536409663,
+          "p25_itl_ms": 26.130659001864842,
+          "p50_itl_ms": 27.389596001739847,
+          "p75_itl_ms": 38.94048199981626,
+          "p99_itl_ms": 120.89714647394497
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 3.41,
+          "p25": 3.41,
+          "p75": 3.419,
+          "n": 3,
+          "raw": [
+            3.409,
+            3.41,
+            3.427
+          ]
+        },
+        "output_throughput": {
+          "median": 436.534,
+          "p25": 436.438,
+          "p75": 437.581,
+          "n": 3,
+          "raw": [
+            436.343,
+            436.534,
+            438.628
+          ]
+        },
+        "total_token_throughput": {
+          "median": 2182.671,
+          "p25": 2182.192,
+          "p75": 2187.905,
+          "n": 3,
+          "raw": [
+            2181.713,
+            2182.671,
+            2193.139
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 95.292,
+          "p25": 95.27,
+          "p75": 97.335,
+          "n": 3,
+          "raw": [
+            95.292,
+            95.248,
+            99.377
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 91.426,
+          "p25": 87.567,
+          "p75": 92.728,
+          "n": 3,
+          "raw": [
+            94.031,
+            91.426,
+            83.709
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 33.6,
+          "p25": 33.533,
+          "p75": 33.865,
+          "n": 3,
+          "raw": [
+            33.6,
+            33.467,
+            34.13
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 33.894,
+          "p25": 33.748,
+          "p75": 34.002,
+          "n": 3,
+          "raw": [
+            33.894,
+            33.602,
+            34.109
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 33.337,
+          "p25": 33.271,
+          "p75": 33.603,
+          "n": 3,
+          "raw": [
+            33.337,
+            33.206,
+            33.868
+          ]
+        }
+      }
+    },
+    "rate_8": {
+      "runs": [
+        {
+          "date": "20260401-085316",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 8.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 17.170721682996373,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 5.823867036353333,
+          "request_goodput": null,
+          "output_throughput": 745.4549806532266,
+          "total_token_throughput": 3727.274903266133,
+          "max_output_tokens_per_s": 1222.0,
+          "max_concurrent_requests": 54,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 104.77149915066548,
+          "median_ttft_ms": 99.59145900211297,
+          "std_ttft_ms": 32.828913277733726,
+          "p25_ttft_ms": 89.2320752464002,
+          "p50_ttft_ms": 99.59145900211297,
+          "p75_ttft_ms": 113.64266725468042,
+          "p99_ttft_ms": 259.39396235968167,
+          "mean_tpot_ms": 36.38177569936624,
+          "median_tpot_ms": 36.19343879527007,
+          "std_tpot_ms": 1.7624635715767292,
+          "p25_tpot_ms": 35.36549681689573,
+          "p50_tpot_ms": 36.19343879527007,
+          "p75_tpot_ms": 37.48668643500309,
+          "p99_tpot_ms": 39.794862847671524,
+          "mean_itl_ms": 36.09748558117019,
+          "median_itl_ms": 36.46971950001898,
+          "std_itl_ms": 12.435675069451547,
+          "p25_itl_ms": 28.991218001465313,
+          "p50_itl_ms": 36.46971950001898,
+          "p75_itl_ms": 39.8948064976139,
+          "p99_itl_ms": 103.04219599493082
+        },
+        {
+          "date": "20260401-085906",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 8.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 15.882798400001775,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 6.296119706461099,
+          "request_goodput": null,
+          "output_throughput": 805.9033224270207,
+          "total_token_throughput": 4029.516612135104,
+          "max_output_tokens_per_s": 1169.0,
+          "max_concurrent_requests": 46,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 79.51940902006754,
+          "median_ttft_ms": 80.59822650102433,
+          "std_ttft_ms": 11.610048413182016,
+          "p25_ttft_ms": 70.25460449949605,
+          "p50_ttft_ms": 80.59822650102433,
+          "p75_ttft_ms": 88.0942395015154,
+          "p99_ttft_ms": 102.45599851361477,
+          "mean_tpot_ms": 28.033950019525943,
+          "median_tpot_ms": 28.300096858251568,
+          "std_tpot_ms": 1.5891656484240917,
+          "p25_tpot_ms": 26.72914652165365,
+          "p50_tpot_ms": 28.300096858251568,
+          "p75_tpot_ms": 29.302438555117355,
+          "p99_tpot_ms": 30.185740730332444,
+          "mean_itl_ms": 27.814901224606956,
+          "median_itl_ms": 27.60793450215715,
+          "std_itl_ms": 3.4493213003197187,
+          "p25_itl_ms": 26.049360745673766,
+          "p50_itl_ms": 27.60793450215715,
+          "p75_itl_ms": 29.3322489997081,
+          "p99_itl_ms": 34.480672639765544
+        },
+        {
+          "date": "20260401-090508",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 8.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 17.241031190002104,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 5.800117110047859,
+          "request_goodput": null,
+          "output_throughput": 742.414990086126,
+          "total_token_throughput": 3712.0749504306295,
+          "max_output_tokens_per_s": 1326.0,
+          "max_concurrent_requests": 56,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 128.7766499202553,
+          "median_ttft_ms": 103.52664900347008,
+          "std_ttft_ms": 73.98013764619027,
+          "p25_ttft_ms": 89.76655850165116,
+          "p50_ttft_ms": 103.52664900347008,
+          "p75_ttft_ms": 124.31309200474061,
+          "p99_ttft_ms": 391.27569385898823,
+          "mean_tpot_ms": 37.424029451576075,
+          "median_tpot_ms": 37.90055326374379,
+          "std_tpot_ms": 2.6201071503626974,
+          "p25_tpot_ms": 35.897641789369665,
+          "p50_tpot_ms": 37.90055326374379,
+          "p75_tpot_ms": 39.70164455508142,
+          "p99_tpot_ms": 40.46124331125067,
+          "mean_itl_ms": 37.13159442742267,
+          "median_itl_ms": 36.203166000632336,
+          "std_itl_ms": 15.717226518296094,
+          "p25_itl_ms": 31.59479049645597,
+          "p50_itl_ms": 36.203166000632336,
+          "p75_itl_ms": 39.69385800155578,
+          "p99_itl_ms": 121.70187622592493
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 5.824,
+          "p25": 5.812,
+          "p75": 6.06,
+          "n": 3,
+          "raw": [
+            5.824,
+            6.296,
+            5.8
+          ]
+        },
+        "output_throughput": {
+          "median": 745.455,
+          "p25": 743.935,
+          "p75": 775.679,
+          "n": 3,
+          "raw": [
+            745.455,
+            805.903,
+            742.415
+          ]
+        },
+        "total_token_throughput": {
+          "median": 3727.275,
+          "p25": 3719.675,
+          "p75": 3878.396,
+          "n": 3,
+          "raw": [
+            3727.275,
+            4029.517,
+            3712.075
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 104.771,
+          "p25": 92.145,
+          "p75": 116.774,
+          "n": 3,
+          "raw": [
+            104.771,
+            79.519,
+            128.777
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 99.591,
+          "p25": 90.095,
+          "p75": 101.559,
+          "n": 3,
+          "raw": [
+            99.591,
+            80.598,
+            103.527
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 36.382,
+          "p25": 32.208,
+          "p75": 36.903,
+          "n": 3,
+          "raw": [
+            36.382,
+            28.034,
+            37.424
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 36.193,
+          "p25": 32.247,
+          "p75": 37.047,
+          "n": 3,
+          "raw": [
+            36.193,
+            28.3,
+            37.901
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 36.097,
+          "p25": 31.956,
+          "p75": 36.615,
+          "n": 3,
+          "raw": [
+            36.097,
+            27.815,
+            37.132
+          ]
+        }
+      }
+    },
+    "rate_16": {
+      "runs": [
+        {
+          "date": "20260401-085339",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 16.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 11.976339619999635,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 8.3497966133999,
+          "request_goodput": null,
+          "output_throughput": 1068.773966515187,
+          "total_token_throughput": 5343.869832575936,
+          "max_output_tokens_per_s": 1688.0,
+          "max_concurrent_requests": 93,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 133.00807354957215,
+          "median_ttft_ms": 124.58746850097668,
+          "std_ttft_ms": 47.21959040461452,
+          "p25_ttft_ms": 97.59908100022585,
+          "p50_ttft_ms": 124.58746850097668,
+          "p75_ttft_ms": 158.40189049959008,
+          "p99_ttft_ms": 291.4511715510889,
+          "mean_tpot_ms": 47.11630558929067,
+          "median_tpot_ms": 47.40804918504533,
+          "std_tpot_ms": 2.9503786892792445,
+          "p25_tpot_ms": 44.9785855315014,
+          "p50_tpot_ms": 47.40804918504533,
+          "p75_tpot_ms": 49.823211159455816,
+          "p99_tpot_ms": 50.914084900300736,
+          "mean_itl_ms": 46.75543606446676,
+          "median_itl_ms": 47.42117850037175,
+          "std_itl_ms": 13.393760997143138,
+          "p25_itl_ms": 37.887742999373586,
+          "p50_itl_ms": 47.42117850037175,
+          "p75_itl_ms": 52.217521753846086,
+          "p99_itl_ms": 96.85236140139753
+        },
+        {
+          "date": "20260401-085927",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 16.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 12.242465781004285,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 8.168289116655119,
+          "request_goodput": null,
+          "output_throughput": 1045.5410069318552,
+          "total_token_throughput": 5227.705034659276,
+          "max_output_tokens_per_s": 1570.0,
+          "max_concurrent_requests": 93,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 138.64926435053349,
+          "median_ttft_ms": 123.02047349658096,
+          "std_ttft_ms": 56.96243597931732,
+          "p25_ttft_ms": 104.83248899981845,
+          "p50_ttft_ms": 123.02047349658096,
+          "p75_ttft_ms": 167.24449500179617,
+          "p99_ttft_ms": 319.74459943907283,
+          "mean_tpot_ms": 49.9169427625954,
+          "median_tpot_ms": 50.29860192912816,
+          "std_tpot_ms": 3.6373515781059202,
+          "p25_tpot_ms": 48.07743583663204,
+          "p50_tpot_ms": 50.29860192912816,
+          "p75_tpot_ms": 52.65443222045243,
+          "p99_tpot_ms": 54.5288899736951,
+          "mean_itl_ms": 49.53465205993236,
+          "median_itl_ms": 47.16500299764448,
+          "std_itl_ms": 16.943070477440557,
+          "p25_itl_ms": 39.962878754522535,
+          "p50_itl_ms": 47.16500299764448,
+          "p75_itl_ms": 56.78034975062474,
+          "p99_itl_ms": 133.52019485326326
+        },
+        {
+          "date": "20260401-090532",
+          "endpoint_type": "openai-chat",
+          "backend": "openai-chat",
+          "label": null,
+          "model_id": "allenai/Molmo2-4B",
+          "tokenizer_id": "allenai/Molmo2-4B",
+          "num_prompts": 100,
+          "request_rate": 16.0,
+          "burstiness": 1.0,
+          "max_concurrency": null,
+          "duration": 12.278958848997718,
+          "completed": 100,
+          "failed": 0,
+          "total_input_tokens": 51200,
+          "total_output_tokens": 12800,
+          "request_throughput": 8.14401295987425,
+          "request_goodput": null,
+          "output_throughput": 1042.433658863904,
+          "total_token_throughput": 5212.168294319519,
+          "max_output_tokens_per_s": 1567.0,
+          "max_concurrent_requests": 95,
+          "rtfx": 0.0,
+          "mean_ttft_ms": 141.76755473963567,
+          "median_ttft_ms": 125.10859450048883,
+          "std_ttft_ms": 53.63479402773861,
+          "p25_ttft_ms": 110.07700999834924,
+          "p50_ttft_ms": 125.10859450048883,
+          "p75_ttft_ms": 161.06605550521635,
+          "p99_ttft_ms": 355.5541604819156,
+          "mean_tpot_ms": 49.24360983803885,
+          "median_tpot_ms": 50.069539129926994,
+          "std_tpot_ms": 2.1576249895632964,
+          "p25_tpot_ms": 48.14629210432747,
+          "p50_tpot_ms": 50.069539129926994,
+          "p75_tpot_ms": 50.947276519685495,
+          "p99_tpot_ms": 52.15264032246932,
+          "mean_itl_ms": 48.85884211781729,
+          "median_itl_ms": 45.9339685003215,
+          "std_itl_ms": 16.65415226872332,
+          "p25_itl_ms": 39.47960099867487,
+          "p50_itl_ms": 45.9339685003215,
+          "p75_itl_ms": 55.83483349982998,
+          "p99_itl_ms": 128.6603653941711
+        }
+      ],
+      "aggregate": {
+        "n_runs": 3,
+        "n_ok": 3,
+        "request_throughput": {
+          "median": 8.168,
+          "p25": 8.156,
+          "p75": 8.259,
+          "n": 3,
+          "raw": [
+            8.35,
+            8.168,
+            8.144
+          ]
+        },
+        "output_throughput": {
+          "median": 1045.541,
+          "p25": 1043.987,
+          "p75": 1057.157,
+          "n": 3,
+          "raw": [
+            1068.774,
+            1045.541,
+            1042.434
+          ]
+        },
+        "total_token_throughput": {
+          "median": 5227.705,
+          "p25": 5219.937,
+          "p75": 5285.787,
+          "n": 3,
+          "raw": [
+            5343.87,
+            5227.705,
+            5212.168
+          ]
+        },
+        "mean_ttft_ms": {
+          "median": 138.649,
+          "p25": 135.829,
+          "p75": 140.208,
+          "n": 3,
+          "raw": [
+            133.008,
+            138.649,
+            141.768
+          ]
+        },
+        "median_ttft_ms": {
+          "median": 124.587,
+          "p25": 123.804,
+          "p75": 124.848,
+          "n": 3,
+          "raw": [
+            124.587,
+            123.02,
+            125.109
+          ]
+        },
+        "mean_tpot_ms": {
+          "median": 49.244,
+          "p25": 48.18,
+          "p75": 49.58,
+          "n": 3,
+          "raw": [
+            47.116,
+            49.917,
+            49.244
+          ]
+        },
+        "median_tpot_ms": {
+          "median": 50.07,
+          "p25": 48.739,
+          "p75": 50.184,
+          "n": 3,
+          "raw": [
+            47.408,
+            50.299,
+            50.07
+          ]
+        },
+        "mean_itl_ms": {
+          "median": 48.859,
+          "p25": 47.807,
+          "p75": 49.197,
+          "n": 3,
+          "raw": [
+            46.755,
+            49.535,
+            48.859
+          ]
+        }
+      }
+    }
+  },
+  "peak_vram_mib": {
+    "max": 23984,
+    "median": 23972
+  },
+  "date": "2026-04-01 08:30:00"
+}
