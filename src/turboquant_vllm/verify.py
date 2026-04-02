@@ -4,6 +4,9 @@ Runs a 128-token random Gaussian prefill through CompressedDynamicCache and
 reports per-layer cosine similarity vs uncompressed DynamicCache. Outputs
 PASS/FAIL against a configurable threshold (default 0.99, compression quality tier).
 
+Gated HuggingFace models (e.g. Llama-3.2) are supported via the ``HF_TOKEN``
+environment variable, which is passed to all ``from_pretrained`` calls.
+
 Validated model families (Molmo2, Mistral, Llama, Qwen2.5, Phi, Gemma 2, Gemma 3)
 report ``"validation": "VALIDATED"`` in the output; unvalidated models report
 ``"UNVALIDATED"`` as a warning.
@@ -33,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from typing import Any
 
@@ -113,7 +117,9 @@ def _run_verification(
     Loads the model, runs a 128-token random Gaussian prefill through both
     uncompressed and compressed caches, and computes per-layer cosine
     similarity. Caches are created with ``DynamicCache(config=config)`` for
-    SWA-aware layer instantiation (Gemma models).
+    SWA-aware layer instantiation (Gemma models). Reads ``HF_TOKEN`` from
+    the environment and passes it to all ``from_pretrained`` calls so that
+    gated repositories (e.g. Llama-3.2) work without ``huggingface-cli login``.
 
     Args:
         model_id: HuggingFace model identifier.
@@ -138,7 +144,8 @@ def _run_verification(
     from turboquant_vllm.kv_cache import CompressedDynamicCache
 
     # Load config first (cheap, no GPU memory)
-    config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+    token = os.environ.get("HF_TOKEN")
+    config = AutoConfig.from_pretrained(model_id, trust_remote_code=True, token=token)
     model_type = config.model_type
 
     # Determine validation status
@@ -159,6 +166,7 @@ def _run_verification(
             torch_dtype=torch.bfloat16,
             device_map="auto",
             trust_remote_code=True,
+            token=token,
         )
     else:
         from transformers import AutoModelForCausalLM
@@ -168,6 +176,7 @@ def _run_verification(
             torch_dtype=torch.bfloat16,
             device_map="auto",
             trust_remote_code=True,
+            token=token,
         )
 
     model_cfg = _detect_model_config(model)
