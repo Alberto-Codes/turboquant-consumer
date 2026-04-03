@@ -16,7 +16,6 @@ dependencies = [
     "scipy>=1.10",
     "accelerate>=0.25",
     "einops>=0.8",
-    "vllm>=0.19",
 ]
 keywords = [
     "ai",
