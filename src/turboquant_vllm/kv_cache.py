@@ -304,6 +304,8 @@ class CompressedDynamicCache:
     as TurboQuantKVCache). Patches ``update()`` and ``get_seq_length()``
     on the wrapped DynamicCache. Supports the context manager protocol
     for automatic ``restore()`` on scope exit, and warns on double-wrap.
+    Compatible with both transformers 4.x and 5.x ``lazy_initialization``
+    signatures via try/except fallback in ``_ensure_layer_initialized``.
 
     Attributes:
         cache (Any): The wrapped DynamicCache instance.
@@ -562,6 +564,27 @@ class CompressedDynamicCache:
             packed=existing.packed,
         )
 
+    def _ensure_layer_initialized(
+        self,
+        layer: Any,
+        key_states: torch.Tensor,
+        value_states: torch.Tensor,
+    ) -> None:
+        """Initialize a ``DynamicLayer`` if it has not been initialized yet.
+
+        Transformers 5.x changed ``lazy_initialization`` to require both
+        ``key_states`` and ``value_states``.  Transformers 4.x accepts only
+        ``key_states``.  We try the 2-arg form first and fall back to the
+        1-arg form on ``TypeError``.  The TypeError is raised at call
+        dispatch (wrong positional-arg count), not inside the method body,
+        so no partial state is left behind on fallback.
+        """
+        if not layer.is_initialized:
+            try:
+                layer.lazy_initialization(key_states, value_states)
+            except TypeError:
+                layer.lazy_initialization(key_states)
+
     def _compressed_update(
         self,
         key_states: torch.Tensor,
@@ -582,9 +605,7 @@ class CompressedDynamicCache:
 
         Works with the ``DynamicCache.layers`` API (transformers >=4.57)
         where each layer is a ``DynamicLayer`` holding ``.keys`` and
-        ``.values`` tensors.  Calls ``lazy_initialization`` with both
-        key and value states (transformers 5.x), falling back to
-        key-only (transformers 4.x) for backwards compatibility.
+        ``.values`` tensors.
 
         Args:
             key_states: Key tensor, shape ``(batch, heads, seq_len, head_dim)``.
@@ -655,11 +676,7 @@ class CompressedDynamicCache:
         # placeholders to satisfy the DynamicLayer API.
         if self.fused_mode:
             layer = self.cache.layers[layer_idx]
-            if not layer.is_initialized:
-                try:
-                    layer.lazy_initialization(key_states, value_states)
-                except TypeError:
-                    layer.lazy_initialization(key_states)
+            self._ensure_layer_initialized(layer, key_states, value_states)
             # Store minimal placeholders — just the new tokens, not the
             # full cache. The fused attention function ignores these.
             layer.keys = key_states
@@ -700,11 +717,7 @@ class CompressedDynamicCache:
 
         # Store in the DynamicLayer for len(cache) / get_seq_length compat
         layer = self.cache.layers[layer_idx]
-        if not layer.is_initialized:
-            try:
-                layer.lazy_initialization(key_states, value_states)
-            except TypeError:
-                layer.lazy_initialization(key_states)
+        self._ensure_layer_initialized(layer, key_states, value_states)
         layer.keys = decompressed_k
         layer.values = decompressed_v
 
