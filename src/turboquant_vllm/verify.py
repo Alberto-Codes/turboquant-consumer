@@ -7,9 +7,12 @@ PASS/FAIL against a configurable threshold (default 0.99, compression quality ti
 Gated HuggingFace models (e.g. Llama-3.2) are supported via the ``HF_TOKEN``
 environment variable, which is passed to all ``from_pretrained`` calls.
 
-Validated model families (Molmo2, Mistral, Llama, Qwen2.5, Phi, Gemma 2, Gemma 3)
-report ``"validation": "VALIDATED"`` in the output; unvalidated models report
-``"UNVALIDATED"`` as a warning.
+Validated model families (Molmo2, Mistral, Llama, Qwen2.5, Phi, Gemma 2, Gemma 3,
+Gemma 4) report ``"validation": "VALIDATED"`` in the output; unvalidated models
+report ``"UNVALIDATED"`` as a warning.
+
+Models with shared KV cache layers (e.g., Gemma 4 with ``num_kv_shared_layers``)
+are handled by iterating only over unique cache layers.
 
 Usage:
     ```bash
@@ -51,6 +54,7 @@ VALIDATED_MODELS: dict[str, str] = {
     "phi3": "Phi",
     "gemma2": "Gemma 2",
     "gemma3": "Gemma 3",
+    "gemma4": "Gemma 4",
 }
 
 COMPRESSION_QUALITY_THRESHOLD = (
@@ -69,7 +73,8 @@ def _detect_model_config(model: Any) -> dict[str, int]:
         model: A loaded HuggingFace model.
 
     Returns:
-        Dict with head_dim, num_heads, num_kv_heads, num_layers.
+        Dict with head_dim, num_heads, num_kv_heads, num_layers,
+        and num_kv_shared_layers (0 when absent or None).
 
     Raises:
         ValueError: If ``head_dim`` is explicit but non-positive, or if
@@ -96,11 +101,13 @@ def _detect_model_config(model: Any) -> dict[str, int]:
         head_dim = hidden_size // num_heads
     num_kv_heads = getattr(text_config, "num_key_value_heads", num_heads)
     num_layers = text_config.num_hidden_layers
+    num_kv_shared_layers = getattr(text_config, "num_kv_shared_layers", 0) or 0
     return {
         "head_dim": head_dim,
         "num_heads": num_heads,
         "num_kv_heads": num_kv_heads,
         "num_layers": num_layers,
+        "num_kv_shared_layers": num_kv_shared_layers,
     }
 
 
@@ -116,10 +123,12 @@ def _run_verification(
 
     Loads the model, runs a 128-token random Gaussian prefill through both
     uncompressed and compressed caches, and computes per-layer cosine
-    similarity. Caches are created with ``DynamicCache(config=config)`` for
-    SWA-aware layer instantiation (Gemma models). Reads ``HF_TOKEN`` from
-    the environment and passes it to all ``from_pretrained`` calls so that
-    gated repositories (e.g. Llama-3.2) work without ``huggingface-cli login``.
+    similarity. Caches are created with ``DynamicCache(config=text_config)``
+    for SWA-aware layer instantiation (Gemma models). Models with shared KV
+    cache layers (``num_kv_shared_layers``) iterate only over unique cache
+    layers. Reads ``HF_TOKEN`` from the environment and passes it to all
+    ``from_pretrained`` calls so that gated repositories work without
+    ``huggingface-cli login``.
 
     Args:
         model_id: HuggingFace model identifier.
@@ -133,6 +142,8 @@ def _run_verification(
         threshold, per_layer_cosine, min_cosine, and versions fields.
 
     Raises:
+        ValueError: If ``num_kv_shared_layers >= num_hidden_layers``,
+            leaving zero unique cache layers to verify.
         RuntimeError: If cache layers are missing keys or values after
             population (indicates a broken compression pipeline).
     """
@@ -183,6 +194,15 @@ def _run_verification(
     head_dim = model_cfg["head_dim"]
     num_kv_heads = model_cfg["num_kv_heads"]
     num_layers = model_cfg["num_layers"]
+    num_kv_shared = model_cfg["num_kv_shared_layers"]
+    num_cache_layers = num_layers - num_kv_shared
+    if num_cache_layers <= 0:
+        msg = (
+            f"Model has {num_layers} layers and {num_kv_shared} shared KV "
+            f"layers, leaving {num_cache_layers} unique cache layers. "
+            f"Check model config for invalid num_kv_shared_layers."
+        )
+        raise ValueError(msg)
     device = next(model.parameters()).device
     text_config = getattr(config, "text_config", config)
 
@@ -192,9 +212,10 @@ def _run_verification(
     fake_keys = torch.randn(input_shape, dtype=torch.bfloat16, device=device)
     fake_values = torch.randn(input_shape, dtype=torch.bfloat16, device=device)
 
-    # Uncompressed reference cache (config enables SWA layer types for Gemma)
-    ref_cache = DynamicCache(config=config)
-    for layer_idx in range(num_layers):
+    # Uncompressed reference cache — use text_config so DynamicCache sees
+    # layer_types and num_kv_shared_layers for models like Gemma 4
+    ref_cache = DynamicCache(config=text_config)
+    for layer_idx in range(num_cache_layers):
         ref_cache.update(fake_keys, fake_values, layer_idx)
 
     # Resolve per-component bits
@@ -202,7 +223,7 @@ def _run_verification(
     resolved_v = v_bits if v_bits is not None else bits
 
     # Compressed cache via context manager
-    compressed_cache = DynamicCache(config=config)
+    compressed_cache = DynamicCache(config=text_config)
     with CompressedDynamicCache(
         compressed_cache,
         head_dim=head_dim,
@@ -211,12 +232,12 @@ def _run_verification(
         v_bits=v_bits,
         model_config=text_config,
     ):
-        for layer_idx in range(num_layers):
+        for layer_idx in range(num_cache_layers):
             compressed_cache.update(fake_keys, fake_values, layer_idx)
 
         # Compute per-layer cosine similarity
         per_layer_cosine: list[float] = []
-        for layer_idx in range(num_layers):
+        for layer_idx in range(num_cache_layers):
             ref_layer = ref_cache.layers[layer_idx]
             comp_layer = compressed_cache.layers[layer_idx]
 

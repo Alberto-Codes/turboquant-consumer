@@ -11,7 +11,6 @@ import torch
 
 from turboquant_vllm.verify import (
     COMPRESSION_QUALITY_THRESHOLD,
-    VALIDATED_MODELS,
     _detect_model_config,
     _format_human_summary,
     _run_verification,
@@ -257,72 +256,7 @@ class TestVerifyOutput:
         assert "more layers" in summary
 
 
-class TestValidatedModels:
-    def test_molmo2_exact_match(self) -> None:
-        assert "molmo2" in VALIDATED_MODELS
-        assert VALIDATED_MODELS["molmo2"] == "Molmo2"
-
-    def test_mistral_exact_match(self) -> None:
-        assert "mistral" in VALIDATED_MODELS
-        assert VALIDATED_MODELS["mistral"] == "Mistral"
-
-    def test_llama_exact_match(self) -> None:
-        assert "llama" in VALIDATED_MODELS
-        assert VALIDATED_MODELS["llama"] == "Llama"
-
-    def test_qwen2_exact_match(self) -> None:
-        assert "qwen2" in VALIDATED_MODELS
-        assert VALIDATED_MODELS["qwen2"] == "Qwen2.5"
-
-    def test_phi3_exact_match(self) -> None:
-        assert "phi3" in VALIDATED_MODELS
-        assert VALIDATED_MODELS["phi3"] == "Phi"
-
-    def test_gemma2_exact_match(self) -> None:
-        assert "gemma2" in VALIDATED_MODELS
-        assert VALIDATED_MODELS["gemma2"] == "Gemma 2"
-
-    def test_gemma3_exact_match(self) -> None:
-        assert "gemma3" in VALIDATED_MODELS
-        assert VALIDATED_MODELS["gemma3"] == "Gemma 3"
-
-    def test_unvalidated_for_unknown_type(self) -> None:
-        assert "gpt2" not in VALIDATED_MODELS
-
-    def test_no_substring_match(self) -> None:
-        # "molmo2" should not match "molmo2-extended" or "xmolmo2"
-        assert "molmo2-extended" not in VALIDATED_MODELS
-        assert "xmolmo2" not in VALIDATED_MODELS
-
-    def test_display_name_mapping(self) -> None:
-        for model_type, display_name in VALIDATED_MODELS.items():
-            assert isinstance(model_type, str)
-            assert isinstance(display_name, str)
-            assert len(display_name) > 0
-
-    def test_validated_result_field(self, mocker, capsys) -> None:
-        result = _make_result(validation="VALIDATED", family_name="Molmo2")
-        mocker.patch(
-            "turboquant_vllm.verify._run_verification",
-            return_value=result,
-        )
-        with pytest.raises(SystemExit):
-            main(["--model", "test/m", "--bits", "4", "--json"])
-        captured = capsys.readouterr()
-        parsed = json.loads(captured.out)
-        assert parsed["validation"] == "VALIDATED"
-
-    def test_unvalidated_result_field(self, mocker, capsys) -> None:
-        result = _make_result(validation="UNVALIDATED", family_name=None)
-        mocker.patch(
-            "turboquant_vllm.verify._run_verification",
-            return_value=result,
-        )
-        with pytest.raises(SystemExit):
-            main(["--model", "test/m", "--bits", "4", "--json"])
-        captured = capsys.readouterr()
-        parsed = json.loads(captured.out)
-        assert parsed["validation"] == "UNVALIDATED"
+# TestValidatedModels extracted to test_verify_models.py (GH-70 test maturity)
 
 
 class TestVerifyThreshold:
@@ -393,6 +327,9 @@ class TestVerifyThreshold:
         assert exc_info.value.code == 0
 
 
+_SENTINEL: object = object()
+
+
 class TestDetectModelConfig:
     """Tests for _detect_model_config head_dim resolution and division guard."""
 
@@ -405,6 +342,7 @@ class TestDetectModelConfig:
         num_kv_heads: int = 8,
         num_layers: int = 32,
         has_head_dim: bool = True,
+        num_kv_shared_layers: int | None | object = _SENTINEL,
     ) -> SimpleNamespace:
         attrs: dict = {
             "hidden_size": hidden_size,
@@ -414,6 +352,8 @@ class TestDetectModelConfig:
         }
         if has_head_dim:
             attrs["head_dim"] = head_dim
+        if num_kv_shared_layers is not _SENTINEL:
+            attrs["num_kv_shared_layers"] = num_kv_shared_layers
         return SimpleNamespace(config=SimpleNamespace(**attrs))
 
     def test_explicit_head_dim(self) -> None:
@@ -459,6 +399,23 @@ class TestDetectModelConfig:
         model = SimpleNamespace(config=SimpleNamespace(text_config=text_cfg))
         result = _detect_model_config(model)
         assert result["head_dim"] == 128
+
+    def test_shared_layers_returned(self) -> None:
+        """Config with num_kv_shared_layers returns it in the dict (GH-70)."""
+        model = self._cfg(num_kv_shared_layers=18)
+        result = _detect_model_config(model)
+        assert result["num_kv_shared_layers"] == 18
+
+    def test_shared_layers_default_zero(self) -> None:
+        """Config without num_kv_shared_layers defaults to 0 (GH-70)."""
+        result = _detect_model_config(self._cfg())
+        assert result["num_kv_shared_layers"] == 0
+
+    def test_shared_layers_none_treated_as_zero(self) -> None:
+        """Config with num_kv_shared_layers=None defaults to 0 (GH-70)."""
+        model = self._cfg(num_kv_shared_layers=None)
+        result = _detect_model_config(model)
+        assert result["num_kv_shared_layers"] == 0
 
 
 @pytest.mark.gpu
