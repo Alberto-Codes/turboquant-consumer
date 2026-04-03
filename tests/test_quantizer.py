@@ -248,7 +248,7 @@ class TestGQAShapes:
         assert reconstructed.shape == x.shape
         cos = torch.nn.functional.cosine_similarity(
             x.flatten().float(), reconstructed.flatten().float(), dim=0
-        )
+        ).item()
         assert cos > 0.80, f"Round-trip cosine {cos:.4f} below 0.80 threshold"
 
     def test_quantize_head_dim_256_gqa(self) -> None:
