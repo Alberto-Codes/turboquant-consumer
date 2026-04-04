@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.1](https://github.com/Alberto-Codes/turboquant-vllm/compare/v1.4.0...v1.4.1) (2026-04-04)
+
+
+### Bug Fixes
+
+* **kv_cache:** pass both key/value states to lazy_initialization for transformers 5.x ([#68](https://github.com/Alberto-Codes/turboquant-vllm/issues/68)) ([bee2071](https://github.com/Alberto-Codes/turboquant-vllm/commit/bee2071fd24e73ac2eba9c5102199f753d5a4727)), closes [#66](https://github.com/Alberto-Codes/turboquant-vllm/issues/66)
+* **quantizer:** add dimension guards for clear errors on GQA shape mismatch ([#69](https://github.com/Alberto-Codes/turboquant-vllm/issues/69)) ([4271915](https://github.com/Alberto-Codes/turboquant-vllm/commit/42719155b6c75c075553b0351efd47d822ac060a)), closes [#67](https://github.com/Alberto-Codes/turboquant-vllm/issues/67)
+* **test:** add create=True to flash_attn_varlen_func mocks for vllm 0.19 ([006d057](https://github.com/Alberto-Codes/turboquant-vllm/commit/006d05743eb7f033e50d5fa15d92300697fc26a5))
+* **verify:** handle num_kv_shared_layers in cache layer iteration ([#71](https://github.com/Alberto-Codes/turboquant-vllm/issues/71)) ([006d057](https://github.com/Alberto-Codes/turboquant-vllm/commit/006d05743eb7f033e50d5fa15d92300697fc26a5)), closes [#70](https://github.com/Alberto-Codes/turboquant-vllm/issues/70)
+* **verify:** pass HF_TOKEN to from_pretrained for gated repos ([#65](https://github.com/Alberto-Codes/turboquant-vllm/issues/65)) ([9d19b87](https://github.com/Alberto-Codes/turboquant-vllm/commit/9d19b87cef462cf0abd5643f6d052ac5a3bc99b6))
+
+
+### Documentation
+
+* **readme:** update for v1.4.0 — asymmetric K/V, 8-model quality matrix, serving benchmarks ([#63](https://github.com/Alberto-Codes/turboquant-vllm/issues/63)) ([6af1b0b](https://github.com/Alberto-Codes/turboquant-vllm/commit/6af1b0b59a2c75ee3bbc9aae13fefb9ceb6d8cd8))
+
 ## [1.4.0](https://github.com/Alberto-Codes/turboquant-vllm/compare/v1.3.0...v1.4.0) (2026-04-01)
 
 
