@@ -102,9 +102,8 @@ class TestTQ4FullAttentionSpec:
             dtype=torch.float16,
         )
         ratio = fp16_spec.page_size_bytes / tq4_spec.page_size_bytes
-        # With padding: 65536/32768 = 2.0 (less than ideal 3.76x but
-        # needed for hybrid model page alignment)
-        assert ratio >= 1.5
+        # Padded: next_power_of_2(136) = 256, so 65536/32768 = 2.0
+        assert abs(ratio - 2.0) < 0.01
 
     def test_dtype_is_uint8(self) -> None:
         """Spec preserves uint8 dtype for packed cache storage."""
