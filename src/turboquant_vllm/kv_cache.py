@@ -279,6 +279,13 @@ class CompressedDynamicCache:
     on each cache read. Only one layer's decompressed tensors are held
     in memory at a time — previous layers are freed on the next update.
 
+    Supports heterogeneous head dimensions for the lazy dequantized
+    (non-fused) cache-read path via per-head_dim compressors created
+    lazily on first use. The fused path consumes shared ``rotation``
+    and ``centroids`` for the primary head_dim only, so it must not be
+    used for models with mixed head dimensions (e.g. Gemma 4: d=256
+    sliding, d=512 global).
+
     Storage per token per head (head_dim=128):
 
     ============  =======  =====  ===========  ===========
@@ -342,8 +349,10 @@ class CompressedDynamicCache:
     ) -> None:
         """Initialize the compressed KV cache wrapper.
 
-        Sets up compressors, internal storage for compressed representations,
-        and incremental decompressed buffers. ``fused_mode`` starts disabled.
+        Sets up per-head_dim compressors (lazily created via
+        ``_get_compressors()``), internal storage for compressed
+        representations, and incremental decompressed buffers.
+        ``fused_mode`` starts disabled.
 
         Keys and values can use different bit-widths via ``k_bits`` and
         ``v_bits``.  When both are ``None``, ``bits`` applies to both
@@ -398,10 +407,21 @@ class CompressedDynamicCache:
         self.v_bits = resolved_v
         self._k_nibble_packed = resolved_k == 4
         self._v_nibble_packed = resolved_v == 4
+        self._seed = seed
         self.enabled = True
 
-        self.key_compressor = TurboQuantCompressorMSE(head_dim, resolved_k, seed=seed)
-        self.value_compressor = TurboQuantCompressorMSE(head_dim, resolved_v, seed=seed)
+        # Per-head_dim compressors for heterogeneous architectures
+        # (Gemma 4: d=256 sliding, d=512 global). Created lazily via
+        # _get_compressors() on first use of each head_dim.
+        self._key_compressors: dict[int, TurboQuantCompressorMSE] = {}
+        self._value_compressors: dict[int, TurboQuantCompressorMSE] = {}
+        # Pre-create compressor for the primary head_dim
+        self._key_compressors[head_dim] = TurboQuantCompressorMSE(
+            head_dim, resolved_k, seed=seed
+        )
+        self._value_compressors[head_dim] = TurboQuantCompressorMSE(
+            head_dim, resolved_v, seed=seed
+        )
 
         self._compressed_keys: list[_CompressedLayer | None] = []
         self._compressed_values: list[_CompressedLayer | None] = []
@@ -446,6 +466,56 @@ class CompressedDynamicCache:
         self._original_get_seq_length = cache.get_seq_length
         cache.update = self._compressed_update
         cache.get_seq_length = self._compressed_get_seq_length
+
+    def _get_compressors(
+        self, dim: int
+    ) -> tuple[TurboQuantCompressorMSE, TurboQuantCompressorMSE]:
+        """Get or create compressors for a given head dimension.
+
+        Lazily creates compressors for head dimensions not seen before,
+        supporting heterogeneous architectures (e.g. Gemma 4: d=256/512).
+        Validates nibble-pack parity constraints for 4-bit components.
+
+        Args:
+            dim: Head dimension for this layer.
+
+        Returns:
+            Tuple of (key_compressor, value_compressor).
+
+        Raises:
+            ValueError: If ``dim`` is odd and any component uses 4-bit
+                (nibble packing requires even dimensions).
+        """
+        if dim not in self._key_compressors:
+            if self._k_nibble_packed and dim % 2 != 0:
+                msg = (
+                    "k_bits=4 requires even head_dim for nibble packing,"
+                    f" got layer head_dim={dim}"
+                )
+                raise ValueError(msg)
+            if self._v_nibble_packed and dim % 2 != 0:
+                msg = (
+                    "v_bits=4 requires even head_dim for nibble packing,"
+                    f" got layer head_dim={dim}"
+                )
+                raise ValueError(msg)
+            self._key_compressors[dim] = TurboQuantCompressorMSE(
+                dim, self.k_bits, seed=self._seed
+            )
+            self._value_compressors[dim] = TurboQuantCompressorMSE(
+                dim, self.v_bits, seed=self._seed
+            )
+        return self._key_compressors[dim], self._value_compressors[dim]
+
+    @property
+    def key_compressor(self) -> TurboQuantCompressorMSE:
+        """Primary key compressor (backward compat)."""
+        return self._key_compressors[self.head_dim]
+
+    @property
+    def value_compressor(self) -> TurboQuantCompressorMSE:
+        """Primary value compressor (backward compat)."""
+        return self._value_compressors[self.head_dim]
 
     @staticmethod
     def _nibble_pack(indices: torch.Tensor) -> torch.Tensor:
@@ -594,6 +664,8 @@ class CompressedDynamicCache:
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compress new tokens and optionally dequantize.
 
+        Selects per-head_dim compressors based on the actual dimension
+        of the incoming tensors (supports heterogeneous architectures).
         Stores compressed representations permanently using per-component
         nibble-pack flags (K and V may use different bit-widths). In normal
         mode, uses incremental dequantization (only NEW tokens decompressed).
@@ -644,12 +716,16 @@ class CompressedDynamicCache:
         # VRAM savings come from compressed storage; decompressed
         # buffers match baseline VRAM for SDPA compatibility.
 
-        # Compress new tokens to uint8 indices + fp32 norms
+        # Compress new tokens to uint8 indices + fp32 norms.
+        # Use per-head_dim compressors for heterogeneous architectures
+        # (Gemma 4: d=256 sliding, d=512 global).
+        layer_dim = key_states.shape[-1]
+        k_comp, v_comp = self._get_compressors(layer_dim)
         new_ck = self._compress_tensor(
-            self.key_compressor, key_states, nibble_packed=self._k_nibble_packed
+            k_comp, key_states, nibble_packed=self._k_nibble_packed
         )
         new_cv = self._compress_tensor(
-            self.value_compressor, value_states, nibble_packed=self._v_nibble_packed
+            v_comp, value_states, nibble_packed=self._v_nibble_packed
         )
 
         # Pad compressed storage for SWA-bypassed layers (None = no
@@ -686,8 +762,8 @@ class CompressedDynamicCache:
         # Incremental dequantization: only decompress the NEW tokens
         # and cat onto a running buffer. Avoids re-dequantizing all 11K+
         # cached tokens at every layer at every decode step.
-        new_k_decompressed = self._dequantize_layer(self.key_compressor, new_ck)
-        new_v_decompressed = self._dequantize_layer(self.value_compressor, new_cv)
+        new_k_decompressed = self._dequantize_layer(k_comp, new_ck)
+        new_v_decompressed = self._dequantize_layer(v_comp, new_cv)
 
         # Extend buffer lists if needed
         while len(self._decompressed_k) <= layer_idx:
