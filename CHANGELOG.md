@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.5.0](https://github.com/Alberto-Codes/turboquant-vllm/compare/v1.4.1...v1.5.0) (2026-04-08)
+
+
+### Features
+
+* **kv-cache:** bypass compression on full attention layers in sliding window models ([#85](https://github.com/Alberto-Codes/turboquant-vllm/issues/85)) ([86daf48](https://github.com/Alberto-Codes/turboquant-vllm/commit/86daf481a2d172b00992ad58c5df1e8bffc69f12)), closes [#77](https://github.com/Alberto-Codes/turboquant-vllm/issues/77)
+* **kv-cache:** per-layer head_dim support for heterogeneous architectures ([#83](https://github.com/Alberto-Codes/turboquant-vllm/issues/83)) ([795f904](https://github.com/Alberto-Codes/turboquant-vllm/commit/795f90411ab2628ed87701d11e01225afd0f10b1)), closes [#75](https://github.com/Alberto-Codes/turboquant-vllm/issues/75)
+
+
+### Bug Fixes
+
+* **init:** warn when transformers&lt;5.5 — Gemma 3/4 require newer version ([#80](https://github.com/Alberto-Codes/turboquant-vllm/issues/80)) ([8c75ba6](https://github.com/Alberto-Codes/turboquant-vllm/commit/8c75ba68ea23624bdfda64bab11debb50a80dd82)), closes [#78](https://github.com/Alberto-Codes/turboquant-vllm/issues/78)
+* **verify:** per-layer head_dim in verification harness ([#84](https://github.com/Alberto-Codes/turboquant-vllm/issues/84)) ([e585680](https://github.com/Alberto-Codes/turboquant-vllm/commit/e5856807cb5ea571066a6f0c2ccdbf5b1026772e)), closes [#73](https://github.com/Alberto-Codes/turboquant-vllm/issues/73)
+* **vllm:** padded slot size for hybrid model page alignment ([#81](https://github.com/Alberto-Codes/turboquant-vllm/issues/81)) ([899f714](https://github.com/Alberto-Codes/turboquant-vllm/commit/899f714547e248b4e5d89625498e12d67d18b047)), closes [#76](https://github.com/Alberto-Codes/turboquant-vllm/issues/76)
+
 ## [1.4.1](https://github.com/Alberto-Codes/turboquant-vllm/compare/v1.4.0...v1.4.1) (2026-04-04)
 
 
