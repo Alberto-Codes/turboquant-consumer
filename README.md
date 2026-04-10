@@ -35,11 +35,11 @@ Optional vLLM plugin extras:
 pip install turboquant-vllm[vllm]
 ```
 
-Or with [uv](https://docs.astral.sh/uv/):
+Or with [uv](https://docs.astral.sh/uv/) (choose one command based on your workflow):
 
 ```bash
-uv add turboquant-vllm
-uv add turboquant-vllm --extra vllm
+uv add turboquant-vllm                 # HuggingFace/reference workflow
+uv add turboquant-vllm --extra vllm    # Include optional vLLM plugin extras
 ```
 
 ## Quick Start (HuggingFace)
